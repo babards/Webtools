@@ -4,6 +4,19 @@
 <div class="card shadow-sm" style="width: 100%; max-width: 400px;">
     <div class="card-body p-4">
         <h4 class="text-center mb-4">{{ __('Register') }}</h4>
+
+        @if (session('message'))
+            <div class="alert alert-info" role="alert">
+                {{ session('message') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger" role="alert">
+                {{ session('error') }}
+            </div>
+        @endif
+        
         <form method="POST" action="{{ route('register') }}">
             @csrf
 
@@ -50,6 +63,19 @@
             <div class="mb-3">
                 <label for="password-confirm" class="form-label">{{ __('Confirm Password') }}</label>
                 <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
+            </div>
+
+            <div class="mb-3">
+                <label for="role" class="form-label">{{ __('Register as') }}</label>
+                <select id="role" name="role" class="form-select @error('role') is-invalid @enderror" required>
+                    <option value="tenant" {{ old('role') == 'tenant' ? 'selected' : '' }}>Tenant</option>
+                    <option value="landlord" {{ old('role') == 'landlord' ? 'selected' : '' }}>Landlord</option>
+                </select>
+                @error('role')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                @enderror
             </div>
 
             <div class="d-grid mb-3">

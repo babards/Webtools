@@ -9,6 +9,7 @@ use App\Http\Controllers\TwoFactorAuthController;
 use App\Mail\TestEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PadController;
 
 Route::get('/verify-email/{token}', [EmailVerificationController::class,'verifyEmail'])
     ->name('verify.email');
@@ -20,7 +21,9 @@ Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']
 
 
 Route::get('/2fa/verify', [TwoFactorAuthController::class, 'verifyForm'])->name('2fa.verify.form');
-Route::post('/2fa/verify', [TwoFactorAuthController::class, 'verify'])->name('2fa.verify');
+Route::post('/2fa/verify', [AuthController::class, 'verify2FA'])->name('2fa.verify');
+Route::post('/2fa/resend', [AuthController::class, 'resend2FACode'])->name('2fa.resend');
+
 
 // Public routes
 Route::get('/', [AuthController::class, 'showRegisterForm'])->name('register');
@@ -36,4 +39,5 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('users', UserController::class);
+    Route::resource('pads', PadController::class);
 });

@@ -4,6 +4,19 @@
 <div class="card shadow-sm" style="width: 100%; max-width: 400px;">
     <div class="card-body p-4">
         <h4 class="text-center mb-4">{{ __('Login') }}</h4>
+
+        @if (session('message'))
+            <div class="alert alert-info" role="alert">
+                {{ session('message') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger" role="alert">
+                {{ session('error') }}
+            </div>
+        @endif
+        
         <form method="POST" action="{{ route('login') }}">
             @csrf
 

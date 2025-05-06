@@ -31,6 +31,7 @@ class AuthController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
+            'role' => 'required|in:tenant,landlord',
         ]);
 
         $user = User::create([
@@ -38,7 +39,7 @@ class AuthController extends Controller
             'last_name' => $request->last_name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user',
+            'role' => $request->role,
             'is_verified' => 0,
             'verification_token' => Str::random(64),
         ]);
@@ -79,7 +80,7 @@ class AuthController extends Controller
             }
             // Generate and send 2FA code
             $user->two_factor_code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
-            $user->two_factor_expires_at = now()->addMinutes(10);
+            $user->two_factor_expires_at = now()->addMinutes(2);
             $user->save();
 
             Mail::to($user->email)->send(new TwoFactorCodeMail($user));
@@ -102,26 +103,33 @@ class AuthController extends Controller
         ]);
 
         $userId = $request->session()->get('2fa_user_id');
-        
-        if (!$userId) {
-            return redirect()->route('login')->with('error', 'No active login attempt found.');
-        }
-
         $user = User::find($userId);
 
         if (!$user) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'User not found.']);
+            }
             return redirect()->route('login')->with('error', 'User not found.');
         }
 
         if (!$user->two_factor_code || !$user->two_factor_expires_at) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'No 2FA code found. Please try logging in again.']);
+            }
             return redirect()->route('login')->with('error', 'No 2FA code found. Please try logging in again.');
         }
 
         if (now()->gt($user->two_factor_expires_at)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => '2FA code has expired. Please try logging in again.']);
+            }
             return redirect()->route('login')->with('error', '2FA code has expired. Please try logging in again.');
         }
 
         if ($user->two_factor_code !== $request->two_factor_code) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Invalid 2FA code.']);
+            }
             return back()->with('error', 'Invalid 2FA code.');
         }
 
@@ -134,6 +142,9 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->forget('2fa_user_id');
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'redirect_url' => url('/dashboard')]);
+        }
         return redirect()->intended('/dashboard');
     }
 
@@ -151,5 +162,19 @@ class AuthController extends Controller
             return redirect()->route('login')->with('error', 'Please login first.');
         }
         return view('auth.2fa-verify');
+    }
+
+    public function resend2FACode(Request $request)
+    {
+        $user = User::find($request->user_id);
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found.']);
+        }
+        // Generate and send new code...
+        $user->two_factor_code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+        $user->two_factor_expires_at = now()->addMinutes(2);
+        $user->save();
+        Mail::to($user->email)->send(new TwoFactorCodeMail($user));
+        return response()->json(['success' => true, 'message' => 'A new code has been sent to your email.']);
     }
 }
