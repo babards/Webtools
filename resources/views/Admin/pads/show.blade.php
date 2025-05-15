@@ -66,11 +66,8 @@
                 </div>
             </div>
 
-            <div class="d-flex gap-2">
-                <a href="{{ route('landlord.pads.applications', $pad->padID) }}" class="btn btn-primary">
-                    View Applications
-                </a>
-                <a href="{{ route('landlord.pads.index') }}" class="btn btn-outline-secondary">
+            <div class="d-flex">
+                <a href="{{ route('admin.pads.index') }}" class="btn btn-outline-secondary">
                     Back to List
                 </a>
             </div>

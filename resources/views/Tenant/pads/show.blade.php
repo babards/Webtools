@@ -40,20 +40,14 @@
                         </div>
                     </div>
                     <div class="row mb-2">
-                        <div class="col-5 text-muted fw-bold">Number of Boarders:</div>
-                        <div class="col-7">{{ $pad->number_of_boarders ?? 0 }}</div>
-                    </div>
-                    <div class="row mb-2">
-                        <div class="col-5 text-muted fw-bold">Applications:</div>
-                        <div class="col-7">
-                            {{ $pad->applications->count() ?? 0 }}
-                        </div>
-                    </div>
-                    <div class="row mb-2">
                         <div class="col-5 text-muted fw-bold">Landlord:</div>
                         <div class="col-7">
                             {{ $pad->landlord->first_name ?? 'N/A' }} {{ $pad->landlord->last_name ?? '' }}
                         </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 text-muted fw-bold">Number of Boarders:</div>
+                        <div class="col-7">{{ $pad->number_of_boarders ?? 0 }}</div>
                     </div>
                     <div class="row mb-2">
                         <div class="col-5 text-muted fw-bold">Created At:</div>
@@ -66,15 +60,64 @@
                 </div>
             </div>
 
-            <div class="d-flex gap-2">
-                <a href="{{ route('landlord.pads.applications', $pad->padID) }}" class="btn btn-primary">
-                    View Applications
-                </a>
-                <a href="{{ route('landlord.pads.index') }}" class="btn btn-outline-secondary">
-                    Back to List
-                </a>
-            </div>
+            @if($pad->padStatus == 'available')
+                <div class="d-flex gap-2 mt-3">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#applyPadModal">
+                        Apply for this Pad
+                    </button>
+                    <a href="{{ route('tenant.pads.index') }}" class="btn btn-secondary">
+                        Back to Pads
+                    </a>
+                </div>
+            @else
+                <div class="mt-3">
+                    <a href="{{ route('tenant.pads.index') }}" class="btn btn-secondary">
+                        Back to Pads
+                    </a>
+                </div>
+            @endif
         </div>
     </div>
+</div>
+
+<!-- Apply Pad Modal -->
+<div class="modal fade" id="applyPadModal" tabindex="-1" aria-labelledby="applyPadModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="{{ route('tenant.pads.apply', ['padId' => $pad->padID]) }}" method="POST">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title w-100 text-center" id="applyPadModalLabel">Apply Pad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex justify-content-between mb-2" style="font-weight: bold;">
+            <div>
+              {{ Auth::user()->name ?? Auth::user()->first_name . ' ' . Auth::user()->last_name }}<br>
+              <span style="font-weight: normal; font-size: 0.9em;">
+                {{ Auth::user()->email }}<br>
+              </span>
+            </div>
+            <div class="text-end">
+              {{ $pad->padName }}<br>
+              <span style="font-weight: normal; font-size: 0.9em;">
+                {{ $pad->landlord->first_name ?? '' }} {{ $pad->landlord->last_name ?? '' }}<br>
+                {{ $pad->padLocation }}
+              </span>
+            </div>
+          </div>
+          <hr>
+          <div class="mb-3">
+            <label for="message" class="form-label">Message:</label>
+            <textarea name="message" id="message" class="form-control" rows="5" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-danger me-2" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">Apply</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 @endsection

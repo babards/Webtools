@@ -62,4 +62,16 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $this->notify(new ResetPasswordNotification($token));
     }
+
+    // Relationship to pads they own (as landlord)
+    public function pads()
+    {
+        return $this->hasMany(Pad::class, 'userID');
+    }
+
+    // Relationship to applications they made (as tenant)
+    public function applications()
+    {
+        return $this->hasMany(PadApplication::class, 'user_id');
+    }
 }

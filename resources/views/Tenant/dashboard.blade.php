@@ -10,7 +10,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Browse Available Pads</h5>
                     <p class="card-text">Find your next home from our list of available pads!</p>
-                    <a href="{{ route('pads.index') }}" class="btn btn-primary">Browse Pads</a>
+                    <a href="{{ route('tenant.pads.index') }}" class="btn btn-primary">Browse Pads</a>
                 </div>
             </div>
         </div>

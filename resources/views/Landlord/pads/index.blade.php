@@ -18,7 +18,7 @@
     @foreach($pads as $pad)
         <div class="col-md-3 mb-4" id="pad-card-{{ $pad->padID }}">
             <div class="card h-100 shadow-sm">
-                <a href="{{ route('pads.show', $pad->padID) }}" style="text-decoration: none; color: inherit;">
+                <a href="{{ route('landlord.pads.show', $pad->padID) }}" style="text-decoration: none; color: inherit;">
                     @if($pad->padImage)
                         <img src="{{ asset('storage/' . $pad->padImage) }}" class="card-img-top" style="height: 160px; object-fit: cover;">
                     @else
@@ -31,23 +31,30 @@
                         <p class="card-text text-muted mb-1">Status: {{ ucfirst($pad->padStatus) }}</p>
                     </div>
                 </a>
-                <div class="card-footer bg-white border-0 d-flex justify-content-between">
-                    <button class="btn btn-sm btn-warning editPadBtn"
-                        data-id="{{ $pad->padID }}"
-                        data-name="{{ $pad->padName }}"
-                        data-description="{{ $pad->padDescription }}"
-                        data-location="{{ $pad->padLocation }}"
-                        data-rent="{{ $pad->padRent }}"
-                        data-status="{{ $pad->padStatus }}"
-                        data-bs-toggle="modal" data-bs-target="#editPadModal">
-                        Edit
-                    </button>
-                    <button class="btn btn-sm btn-danger deletePadBtn"
-                        data-id="{{ $pad->padID }}"
-                        data-name="{{ $pad->padName }}"
-                        data-bs-toggle="modal" data-bs-target="#deletePadModal">
-                        Delete
-                    </button>
+                <div class="card-footer bg-white border-0">
+                    <div class="mb-2">
+                        <strong>Boarders:</strong> {{ $pad->number_of_boarders ?? 0 }}
+                    </div>
+                    <div class="d-flex gap-2 mt-2">
+                        <button class="btn btn-warning btn-sm editPadBtn"
+                            data-id="{{ $pad->padID }}"
+                            data-name="{{ $pad->padName }}"
+                            data-description="{{ $pad->padDescription }}"
+                            data-location="{{ $pad->padLocation }}"
+                            data-rent="{{ $pad->padRent }}"
+                            data-status="{{ $pad->padStatus }}"
+                            data-bs-toggle="modal" data-bs-target="#editPadModal"
+                            style="color:#000;">
+                            Edit
+                        </button>
+                        <button class="btn btn-danger btn-sm deletePadBtn"
+                            data-id="{{ $pad->padID }}"
+                            data-name="{{ $pad->padName }}"
+                            data-bs-toggle="modal" data-bs-target="#deletePadModal"
+                            style="color:#fff;">
+                            Delete
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -65,7 +72,7 @@
 <!-- Create Pad Modal -->
 <div class="modal fade" id="createPadModal" tabindex="-1" aria-labelledby="createPadModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form method="POST" action="{{ route('pads.store') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('landlord.pads.store') }}" enctype="multipart/form-data">
       @csrf
       <div class="modal-content">
         <div class="modal-header">
@@ -195,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('editPadLocation').value = this.dataset.location;
             document.getElementById('editPadRent').value = this.dataset.rent;
             document.getElementById('editPadStatus').value = this.dataset.status;
-            document.getElementById('editPadForm').action = '/pads/' + this.dataset.id;
+            document.getElementById('editPadForm').action = '/landlord/pads/' + this.dataset.id;
         });
     });
 
@@ -203,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.deletePadBtn').forEach(function (button) {
         button.addEventListener('click', function () {
             document.getElementById('deletePadName').textContent = this.dataset.name;
-            document.getElementById('deletePadForm').action = '/pads/' + this.dataset.id;
+            document.getElementById('deletePadForm').action = '/landlord/pads/' + this.dataset.id;
         });
     });
 });

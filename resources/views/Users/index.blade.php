@@ -124,7 +124,7 @@
 <!-- Create User Modal -->
 <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form method="POST" action="{{ route('users.store') }}">
+    <form method="POST" action="{{ route('admin.users.store') }}">
       @csrf
       <div class="modal-content">
         <div class="modal-header">
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('editLastName').value = this.dataset.last_name;
             document.getElementById('editEmail').value = this.dataset.email;
             document.getElementById('editRole').value = this.dataset.role;
-            document.getElementById('editUserForm').action = '/users/' + this.dataset.id;
+            document.getElementById('editUserForm').action = '/admin/users/' + this.dataset.id;
         });
     });
 
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.deleteUserBtn').forEach(function (button) {
         button.addEventListener('click', function () {
             document.getElementById('deleteUserName').textContent = this.dataset.name;
-            document.getElementById('deleteUserForm').action = '/users/' + this.dataset.id;
+            document.getElementById('deleteUserForm').action = '/admin/users/' + this.dataset.id;
         });
     });
 });

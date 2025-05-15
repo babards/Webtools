@@ -34,7 +34,7 @@
 
                     <!-- Admin Navigation -->
                     @if(auth()->user()->role === 'admin')
-                        <a class="nav-link {{ Route::currentRouteName() === 'users.index' ? 'active' : '' }}" href="{{ route('users.index') }}">
+                        <a class="nav-link {{ Route::currentRouteName() === 'admin.users.index' ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
                             <i class="fas fa-users-cog me-2"></i>User Management
                         </a>
                         <a class="nav-link {{ Route::currentRouteName() === 'admin.pads.index' ? 'active' : '' }}" href="{{ route('admin.pads.index') }}">
@@ -47,12 +47,18 @@
                         <a class="nav-link {{ Route::currentRouteName() === 'landlord.pads.index' ? 'active' : '' }}" href="{{ route('landlord.pads.index') }}">
                             <i class="fas fa-home me-2"></i>Manage Pads
                         </a>
+                        <a class="nav-link {{ Route::currentRouteName() === 'landlord.applications.all' ? 'active' : '' }}" href="{{ route('landlord.applications.all') }}">
+                            <i class="fas fa-file-alt me-2"></i>View Applications
+                        </a>
                     @endif
 
                     <!-- Tenant Navigation -->
                     @if(auth()->user()->role === 'tenant')
                         <a class="nav-link {{ Route::currentRouteName() === 'tenant.pads.index' ? 'active' : '' }}" href="{{ route('tenant.pads.index') }}">
                             <i class="fas fa-search me-2"></i>Browse Pads
+                        </a>
+                        <a class="nav-link {{ Route::currentRouteName() === 'tenant.applications.index' ? 'active' : '' }}" href="{{ route('tenant.applications.index') }}">
+                            <i class="fas fa-file-alt me-2"></i>My Applications
                         </a>
                     @endif
 
@@ -126,6 +132,11 @@
 </html>
 
 <style>
+    .pad-img {
+        width: 100%;
+        height: 200px; /* Set your desired height */
+        object-fit: cover;
+    }
     .sidebar {
         min-height: 100vh;
         background-color: #f8f9fa;

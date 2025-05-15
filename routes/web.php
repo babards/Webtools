@@ -40,21 +40,44 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Admin routes
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class);
-        Route::get('/admin/pads', [PadController::class, 'adminIndex'])->name('admin.pads.index');
+
+        // Admin Pad Management Routes
+        Route::get('pads', [PadController::class, 'adminIndex'])->name('pads.index');
+        Route::post('pads', [PadController::class, 'adminstore'])->name('pads.store');
+        Route::get('pads/create', [PadController::class, 'adminCreate'])->name('pads.create');
+        Route::get('pads/{pad}', [PadController::class, 'adminShow'])->name('pads.show');
+        Route::get('pads/{pad}/edit', [PadController::class, 'adminEdit'])->name('pads.edit');
+        Route::put('pads/{pad}', [PadController::class, 'adminupdate'])->name('pads.update');
+        Route::delete('pads/{pad}', [PadController::class, 'admindestroy'])->name('pads.destroy');
     });
 
     // Landlord routes
-    Route::middleware(['role:landlord'])->group(function () {
-        Route::get('/pads', [PadController::class, 'index'])->name('landlord.pads.index');
+    Route::middleware(['role:landlord'])->prefix('landlord')->name('landlord.')->group(function () {
+        Route::get('/pads', [PadController::class, 'index'])->name('pads.index');
+        Route::get('/pads/create', [PadController::class, 'create'])->name('pads.create');
+        Route::post('/pads', [PadController::class, 'store'])->name('pads.store');
         Route::get('/pads/{pad}', [PadController::class, 'show'])->name('pads.show');
-        Route::resource('pads', PadController::class)->except(['index', 'show']);
+        Route::get('/pads/{pad}/edit', [PadController::class, 'edit'])->name('pads.edit');
+        Route::put('/pads/{pad}', [PadController::class, 'update'])->name('pads.update');
+        Route::delete('/pads/{pad}', [PadController::class, 'destroy'])->name('pads.destroy');
+        
+        // Application management for landlords
+        Route::get('/pads/{padId}/applications', [PadController::class, 'landlordViewApplications'])->name('pads.applications');
+        Route::post('/applications/{applicationId}/approve', [PadController::class, 'landlordApproveApplication'])->name('applications.approve');
+        Route::post('/applications/{applicationId}/reject', [PadController::class, 'landlordRejectApplication'])->name('applications.reject');
+        Route::get('/applications', [PadController::class, 'landlordAllApplications'])->name('applications.all');
     });
 
     // Tenant routes
-    Route::middleware(['role:tenant'])->group(function () {
-        Route::get('/tenant/pads', [PadController::class, 'tenantIndex'])->name('tenant.pads.index');
-        Route::get('/tenant/pads/{pad}', [PadController::class, 'show'])->name('tenant.pads.show');
+    Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(function () {
+        Route::get('/pads', [PadController::class, 'tenantIndex'])->name('pads.index');
+        Route::get('/pads/{pad}', [PadController::class, 'tenantShow'])->name('pads.show');
+
+        // Pad application for tenants
+        Route::post('/pads/{padId}/apply', [PadController::class, 'tenantApply'])->name('pads.apply');
+        Route::get('/my-applications', [PadController::class, 'tenantMyApplications'])->name('applications.index');
+        Route::post('/applications/{applicationId}/cancel', [PadController::class, 'tenantCancelApplication'])->name('applications.cancel');
     });
 });
