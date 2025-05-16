@@ -3,6 +3,41 @@
 @section('content')
 <div class="container">
     <h2>All Tenant Applications</h2>
+    <form method="GET" action="" class="row g-2 mb-3 align-items-end">
+        <div class="col-md-3">
+            <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ request('search') }}">
+        </div>
+        <div class="col-md-2">
+            <select name="pad_filter" class="form-select" onchange="this.form.submit()">
+                <option value="">All Pads</option>
+                @foreach($applications->pluck('pad.padName')->unique() as $padName)
+                    <option value="{{ $padName }}" {{ request('pad_filter') == $padName ? 'selected' : '' }}>{{ $padName }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="tenant_filter" class="form-select" onchange="this.form.submit()">
+                <option value="">All Tenants</option>
+                @foreach($applications->pluck('tenant')->unique('id') as $tenant)
+                    @if($tenant)
+                        <option value="{{ $tenant->id }}" {{ request('tenant_filter') == $tenant->id ? 'selected' : '' }}>{{ $tenant->first_name }} {{ $tenant->last_name }}</option>
+                    @endif
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status_filter" class="form-select" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                <option value="approved" {{ request('status_filter') == 'approved' ? 'selected' : '' }}>Approved</option>
+                <option value="pending" {{ request('status_filter') == 'pending' ? 'selected' : '' }}>Pending</option>
+                <option value="rejected" {{ request('status_filter') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                <option value="cancelled" {{ request('status_filter') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <a href="{{ route('landlord.applications.all') }}" class="btn btn-outline-secondary w-100">Reset Filters</a>
+        </div>
+    </form>
     @if($applications->count())
         <table class="table table-bordered">
             <thead>

@@ -38,6 +38,15 @@
                 </select>
             </div>
             <div class="col-md-2">
+                <select name="price_filter" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Prices</option>
+                    <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below ₱1,000</option>
+                    <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 - ₱2,000</option>
+                    <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 - ₱3,000</option>
+                    <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above ₱3,000</option>
+                </select>
+            </div>
+            <div class="col-md-2">
                 <a href="{{ route('admin.pads.index') }}" class="btn btn-outline-secondary w-100">Reset Filters</a>
             </div>
         </div>

@@ -5,9 +5,43 @@
     <h2>Available Pads</h2>
 
     <form method="GET" action="{{ route('tenant.pads.index') }}" class="mb-3">
-        <div class="input-group">
-            <input type="text" name="search" class="form-control" placeholder="Search pads..." value="{{ request('search') }}">
-            <button class="btn btn-primary" type="submit">Search</button>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search pads..." value="{{ request('search') }}">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="landlord_filter" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Landlords</option>
+                    @foreach($pads->pluck('landlord')->unique('id') as $landlord)
+                        @if($landlord)
+                            <option value="{{ $landlord->id }}" {{ request('landlord_filter') == $landlord->id ? 'selected' : '' }}>{{ $landlord->first_name }} {{ $landlord->last_name }}</option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="location_filter" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Locations</option>
+                    @foreach($pads->pluck('padLocation')->unique() as $location)
+                        <option value="{{ $location }}" {{ request('location_filter') == $location ? 'selected' : '' }}>{{ $location }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="price_filter" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Prices</option>
+                    <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below ₱1,000</option>
+                    <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 - ₱2,000</option>
+                    <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 - ₱3,000</option>
+                    <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above ₱3,000</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <a href="{{ route('tenant.pads.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
+            </div>
         </div>
     </form>
 

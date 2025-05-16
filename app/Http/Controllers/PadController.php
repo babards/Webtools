@@ -28,6 +28,29 @@ class PadController extends Controller
             });
         }
 
+        // Add location filter
+        if ($request->filled('location_filter')) {
+            $query->where('padLocation', $request->input('location_filter'));
+        }
+
+        // Add price range filter
+        if ($request->filled('price_filter')) {
+            switch ($request->input('price_filter')) {
+                case 'below_1000':
+                    $query->where('padRent', '<', 1000);
+                    break;
+                case '1000_2000':
+                    $query->whereBetween('padRent', [1000, 2000]);
+                    break;
+                case '2000_3000':
+                    $query->whereBetween('padRent', [2000, 3000]);
+                    break;
+                case 'above_3000':
+                    $query->where('padRent', '>', 3000);
+                    break;
+            }
+        }
+
         $pads = $query->paginate(8);
 
         return view('landlord.pads.index', compact('pads'));
@@ -107,11 +130,43 @@ class PadController extends Controller
                   ->orWhere('padLocation', 'like', "%{$search}%")
                   ->orWhere('padDescription', 'like', "%{$search}%")
                   ->orWhere('padRent', 'like', "%{$search}%")
-                  ->orWhere('padStatus', 'like', "%{$search}%");
+                  ->orWhere('padStatus', 'like', "%{$search}%")
+                  ->orWhereHas('landlord', function($q2) use ($search) {
+                      $q2->where('first_name', 'like', "%{$search}%")
+                          ->orWhere('last_name', 'like', "%{$search}%");
+                  });
             })->orWhereHas('landlord', function($q) use ($search) { // Search by landlord name
                 $q->where('first_name', 'like', "%{$search}%")
                   ->orWhere('last_name', 'like', "%{$search}%");
             });
+        }
+
+        // Add landlord filter
+        if ($request->filled('landlord_filter')) {
+            $query->where('userID', $request->input('landlord_filter'));
+        }
+
+        // Add location filter
+        if ($request->filled('location_filter')) {
+            $query->where('padLocation', $request->input('location_filter'));
+        }
+
+        // Add price range filter
+        if ($request->filled('price_filter')) {
+            switch ($request->input('price_filter')) {
+                case 'below_1000':
+                    $query->where('padRent', '<', 1000);
+                    break;
+                case '1000_2000':
+                    $query->whereBetween('padRent', [1000, 2000]);
+                    break;
+                case '2000_3000':
+                    $query->whereBetween('padRent', [2000, 3000]);
+                    break;
+                case 'above_3000':
+                    $query->where('padRent', '>', 3000);
+                    break;
+            }
         }
 
         $pads = $query->orderBy('padCreatedAt', 'desc')->paginate(8);
@@ -205,8 +260,41 @@ class PadController extends Controller
                 $q->where('padName', 'like', "%{$search}%")
                   ->orWhere('padLocation', 'like', "%{$search}%")
                   ->orWhere('padDescription', 'like', "%{$search}%")
-                  ->orWhere('padRent', 'like', "%{$search}%");
+                  ->orWhere('padRent', 'like', "%{$search}%")
+                  ->orWhere('padStatus', 'like', "%{$search}%")
+                  ->orWhereHas('landlord', function($q2) use ($search) {
+                      $q2->where('first_name', 'like', "%{$search}%")
+                          ->orWhere('last_name', 'like', "%{$search}%");
+                  });
             });
+        }
+
+        // Landlord filter
+        if ($request->filled('landlord_filter')) {
+            $query->where('userID', $request->input('landlord_filter'));
+        }
+
+        // Location filter
+        if ($request->filled('location_filter')) {
+            $query->where('padLocation', $request->input('location_filter'));
+        }
+
+        // Price range filter
+        if ($request->filled('price_filter')) {
+            switch ($request->input('price_filter')) {
+                case 'below_1000':
+                    $query->where('padRent', '<', 1000);
+                    break;
+                case '1000_2000':
+                    $query->whereBetween('padRent', [1000, 2000]);
+                    break;
+                case '2000_3000':
+                    $query->whereBetween('padRent', [2000, 3000]);
+                    break;
+                case 'above_3000':
+                    $query->where('padRent', '>', 3000);
+                    break;
+            }
         }
 
         $pads = $query->paginate(8);
@@ -251,13 +339,37 @@ class PadController extends Controller
     }
 
     // Tenant views their applications
-    public function tenantMyApplications()
+    public function tenantMyApplications(Request $request)
     {
         $applications = PadApplication::with('pad')
-            ->where('user_id', Auth::id())
-            ->orderBy('application_date', 'desc')
-            ->paginate(10);
-        
+            ->where('user_id', Auth::id());
+
+        // Search filter (searches pad name, location, message, and status)
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $applications = $applications->where(function($q) use ($search) {
+                $q->whereHas('pad', function($q2) use ($search) {
+                    $q2->where('padName', 'like', "%{$search}%")
+                        ->orWhere('padLocation', 'like', "%{$search}%");
+                })
+                ->orWhere('message', 'like', "%{$search}%")
+                ->orWhere('status', 'like', "%{$search}%");
+            });
+        }
+
+        // Pad name filter
+        if ($request->filled('pad_filter')) {
+            $applications = $applications->whereHas('pad', function($q) use ($request) {
+                $q->where('padName', $request->input('pad_filter'));
+            });
+        }
+
+        // Status filter
+        if ($request->filled('status_filter')) {
+            $applications = $applications->where('status', $request->input('status_filter'));
+        }
+
+        $applications = $applications->orderBy('application_date', 'desc')->paginate(10);
         return view('tenant.applications.index', compact('applications'));
     }
 
@@ -318,15 +430,46 @@ class PadController extends Controller
         return redirect()->back()->with('error', 'Application cannot be rejected.');
     }
 
-    public function landlordAllApplications()
+    public function landlordAllApplications(Request $request)
     {
-        // Get all applications for pads owned by the current landlord
         $applications = \App\Models\PadApplication::with(['pad', 'tenant'])
             ->whereHas('pad', function($query) {
                 $query->where('userID', auth()->id());
-            })
-            ->orderBy('application_date', 'desc')
-            ->paginate(15);
+            });
+
+        // Search filter (searches pad name, tenant name, and message)
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $applications = $applications->where(function($q) use ($search) {
+                $q->whereHas('pad', function($q2) use ($search) {
+                    $q2->where('padName', 'like', "%{$search}%");
+                })
+                ->orWhereHas('tenant', function($q2) use ($search) {
+                    $q2->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%");
+                })
+                ->orWhere('message', 'like', "%{$search}%");
+            });
+        }
+
+        // Pad name filter
+        if ($request->filled('pad_filter')) {
+            $applications = $applications->whereHas('pad', function($q) use ($request) {
+                $q->where('padName', $request->input('pad_filter'));
+            });
+        }
+
+        // Tenant filter
+        if ($request->filled('tenant_filter')) {
+            $applications = $applications->where('user_id', $request->input('tenant_filter'));
+        }
+
+        // Status filter
+        if ($request->filled('status_filter')) {
+            $applications = $applications->where('status', $request->input('status_filter'));
+        }
+
+        $applications = $applications->orderBy('application_date', 'desc')->paginate(15);
 
         return view('landlord.applications.index', compact('applications'));
     }

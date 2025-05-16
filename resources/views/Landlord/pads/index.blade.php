@@ -9,6 +9,22 @@
             <button class="btn btn-primary" type="submit">Search</button>
         </div>
     </form>
+    <form method="GET" action="{{ route('landlord.pads.index') }}" class="d-flex gap-2 align-items-center flex-grow-1">
+        <select name="location_filter" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
+            <option value="">All Locations</option>
+            @foreach($pads->pluck('padLocation')->unique() as $location)
+                <option value="{{ $location }}" {{ request('location_filter') == $location ? 'selected' : '' }}>{{ $location }}</option>
+            @endforeach
+        </select>
+        <select name="price_filter" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
+            <option value="">All Prices</option>
+            <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below ₱1,000</option>
+            <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 - ₱2,000</option>
+            <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 - ₱3,000</option>
+            <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above ₱3,000</option>
+        </select>
+        <a href="{{ route('landlord.pads.index') }}" class="btn btn-outline-secondary">Reset Filters</a>
+    </form>
     <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">
         Add New Pad
     </a>
