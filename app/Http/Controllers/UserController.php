@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use App\Traits\LogsActivity;
 
 class UserController extends Controller
 {
+    use LogsActivity;
+
     /**
      * Display a listing of the resource.
      */
@@ -63,13 +66,15 @@ class UserController extends Controller
             'password'   => 'required|string|min:6',
         ]);
 
-        User::create([
+        $user = User::create([
             'first_name' => $request->first_name,
             'last_name'  => $request->last_name,
             'email'      => $request->email,
             'role'       => $request->role,
             'password'   => Hash::make($request->password),
         ]);
+
+        $this->logActivity('create_user', "Created user: {$user->first_name} {$user->last_name} ({$user->email})");
 
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
@@ -116,6 +121,8 @@ class UserController extends Controller
 
         $user->save();
 
+        $this->logActivity('update_user', "Updated user: {$user->first_name} {$user->last_name} ({$user->email})");
+
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
@@ -128,7 +135,10 @@ class UserController extends Controller
             abort(403);
         }
         $user = User::findOrFail($id);
+        $userName = "{$user->first_name} {$user->last_name} ({$user->email})";
         $user->delete();
+
+        $this->logActivity('delete_user', "Deleted user: $userName");
 
         return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
     }

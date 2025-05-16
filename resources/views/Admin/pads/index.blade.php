@@ -101,7 +101,7 @@
                         >
                             Edit
                         </button>
-                        <form action="{{ route('landlord.pads.destroy', $pad->padID) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this pad?');">
+                        <form action="{{ route('admin.pads.destroy', $pad->padID) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this pad?');">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger btn-sm">Delete</button>

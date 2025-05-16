@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Pad;
+use App\Models\PadApplication;
 
 class DashboardController extends Controller
 {
@@ -17,13 +20,28 @@ class DashboardController extends Controller
         
         switch($user->role) {
             case 'admin':
-                return view('Admin.dashboard');
+                return redirect()->route('admin.dashboard');
             case 'landlord':
-                return view('Landlord.dashboard');
+                return redirect()->route('landlord.pads.index');
             case 'tenant':
-                return view('Tenant.dashboard');
+                return redirect()->route('tenant.pads.index');
             default:
-                abort(403, 'Unauthorized role.');
+                return redirect()->route('login');
         }
+    }
+
+    public function adminDashboard()
+    {
+        $stats = [
+            'total_users' => User::count(),
+            'total_landlords' => User::where('role', 'landlord')->count(),
+            'total_tenants' => User::where('role', 'tenant')->count(),
+            'total_pads' => Pad::count(),
+            'available_pads' => Pad::where('padStatus', 'available')->count(),
+            'total_applications' => PadApplication::count(),
+            'pending_applications' => PadApplication::where('status', 'pending')->count(),
+        ];
+
+        return view('admin.dashboard', compact('stats'));
     }
 } 

@@ -1,33 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- @if (session('success'))
-    <div class="alert alert-success alert-dismissible fade show mt-3 mx-3" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
-
-@if (session('error'))
-    <div class="alert alert-danger alert-dismissible fade show mt-3 mx-3" role="alert">
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
-
-@if (session('info'))
-    <div class="alert alert-info alert-dismissible fade show mt-3 mx-3" role="alert">
-        {{ session('info') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
-
-@if (session('message'))
-    <div class="alert alert-primary alert-dismissible fade show mt-3 mx-3" role="alert">
-        {{ session('message') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif -->
 
 <div class="container py-4">
     <div class="row justify-content-center">

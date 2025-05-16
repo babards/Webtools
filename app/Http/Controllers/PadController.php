@@ -9,9 +9,12 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use App\Models\PadApplication;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\LogsActivity;
 
 class PadController extends Controller
 {
+    use LogsActivity;
+
     // Show the landlord's pad management page
     public function index(Request $request)
     {
@@ -75,9 +78,10 @@ class PadController extends Controller
             $data['padImage'] = $request->file('padImage')->store('pads', 'public');
         }
 
-        \App\Models\Pad::create($data);
+        $pad = \App\Models\Pad::create($data);
 
-        // Redirect back with a success message
+        $this->logActivity('create_pad', "Created new pad: {$pad->padName}");
+
         return redirect()->route('landlord.pads.index')->with('success', 'Pad created successfully!');
     }
 
@@ -102,13 +106,19 @@ class PadController extends Controller
 
         $pad->update($data);
 
+        $this->logActivity('update_pad', "Updated pad: {$pad->padName}");
+
         return redirect()->route('landlord.pads.index')->with('success', 'Pad updated successfully!');
     }
 
     public function destroy($id)
     {
         $pad = \App\Models\Pad::findOrFail($id);
+        $padName = $pad->padName;
         $pad->delete();
+
+        $this->logActivity('delete_pad', "Deleted pad: {$padName}");
+
         return redirect()->route('landlord.pads.index')->with('success', 'Pad deleted successfully!');
     }
 
@@ -201,7 +211,10 @@ class PadController extends Controller
             $data['padImage'] = $request->file('padImage')->store('pads', 'public');
         }
 
-        Pad::create($data);
+        $pad = Pad::create($data);
+
+        $this->logActivity('admin_create_pad', "Admin created pad: {$pad->padName}");
+
         return redirect()->route('admin.pads.index')->with('success', 'Pad created successfully!');
     }
 
@@ -233,13 +246,20 @@ class PadController extends Controller
         }
 
         $pad->update($data);
+
+        $this->logActivity('admin_update_pad', "Admin updated pad: {$pad->padName}");
+
         return redirect()->route('admin.pads.index')->with('success', 'Pad updated successfully!');
     }
 
     public function admindestroy($id)
     {
         $pad = \App\Models\Pad::findOrFail($id);
+        $padName = $pad->padName;
         $pad->delete();
+
+        $this->logActivity('admin_delete_pad', "Admin deleted pad: {$padName}");
+
         return redirect()->route('admin.pads.index')->with('success', 'Pad deleted successfully!');
     }
 
@@ -327,13 +347,15 @@ class PadController extends Controller
             return redirect()->back()->with('error', 'You already have an active application for this pad.');
         }
 
-        PadApplication::create([
+        $application = PadApplication::create([
             'pad_id' => $pad->padID,
             'user_id' => $tenant->id,
             'status' => 'pending',
             'application_date' => now(),
             'message' => $request->input('message'),
         ]);
+
+        $this->logActivity('apply_pad', "Applied for pad: {$pad->padName}");
 
         return redirect()->route('tenant.pads.index')->with('success', 'Application submitted successfully!');
     }
@@ -406,6 +428,8 @@ class PadController extends Controller
             // Optionally, you might want to change pad status if it reaches capacity,
             // or reject other pending applications for this pad. For now, just approve.
 
+            $this->logActivity('approve_application', "Approved application for pad: {$pad->padName}");
+
             return redirect()->back()->with('success', 'Application approved successfully.');
         }
         return redirect()->back()->with('error', 'Application cannot be approved.');
@@ -425,6 +449,9 @@ class PadController extends Controller
         if ($application->status === 'pending') {
             $application->status = 'rejected';
             $application->save();
+
+            $this->logActivity('reject_application', "Rejected application for pad: {$pad->padName}");
+
             return redirect()->back()->with('success', 'Application rejected successfully.');
         }
         return redirect()->back()->with('error', 'Application cannot be rejected.');
@@ -483,6 +510,8 @@ class PadController extends Controller
 
         $application->status = 'cancelled';
         $application->save();
+
+        $this->logActivity('cancel_application', "Cancelled application for pad: {$application->pad->padName}");
 
         return redirect()->back()->with('success', 'Application cancelled successfully.');
     }

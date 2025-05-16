@@ -11,9 +11,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\EmailVerificationController;
+use App\Traits\LogsActivity;
 
 class AuthController extends Controller
 {
+    use LogsActivity;
+
     public function showLoginForm()
     {
         return view('auth.login');
@@ -45,7 +48,7 @@ class AuthController extends Controller
         ]);
 
         Mail::to($user->email)->send(new VerifyEmail($user));
-
+        $this->logActivity('register', "New user registration: {$user->first_name} {$user->last_name} ({$user->email})");
         return redirect('/login')->with('message', 'Please check your email to verify your account before logging in.');
     }
 
@@ -76,6 +79,7 @@ class AuthController extends Controller
             Auth::logout(); // Logout immediately for 2FA
             
             if (!$user->is_verified) {
+                $this->logActivity('login_failed', "Login failed - Unverified email: {$request->email}");
                 return back()->with('error', 'Please verify your email before logging in.');
             }
             // Generate and send 2FA code
@@ -84,13 +88,14 @@ class AuthController extends Controller
             $user->save();
 
             Mail::to($user->email)->send(new TwoFactorCodeMail($user));
+            $this->logActivity('login_2fa_required', "2FA code sent to: {$user->email}");
             
             // Store user ID in session before redirecting
             $request->session()->put('2fa_user_id', $user->id);
             
             return redirect()->route('2fa.verify.form')->with('message', 'Please check your email for the 2FA code.');
         }
-
+        $this->logActivity('login_failed', "Failed login attempt: {$request->email}");
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
@@ -106,6 +111,7 @@ class AuthController extends Controller
         $user = User::find($userId);
 
         if (!$user) {
+            $this->logActivity('2fa_failed', '2FA failed: user not found');
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => 'User not found.']);
             }
@@ -113,6 +119,7 @@ class AuthController extends Controller
         }
 
         if (!$user->two_factor_code || !$user->two_factor_expires_at) {
+            $this->logActivity('2fa_failed', '2FA failed: no code found');
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => 'No 2FA code found. Please try logging in again.']);
             }
@@ -120,6 +127,7 @@ class AuthController extends Controller
         }
 
         if (now()->gt($user->two_factor_expires_at)) {
+            $this->logActivity('2fa_failed', '2FA failed: code expired');
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => '2FA code has expired. Please try logging in again.']);
             }
@@ -127,6 +135,7 @@ class AuthController extends Controller
         }
 
         if ($user->two_factor_code !== $request->two_factor_code) {
+            $this->logActivity('2fa_failed', "Failed 2FA verification for: {$user->email}");
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => 'Invalid 2FA code.']);
             }
@@ -141,6 +150,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->forget('2fa_user_id');
+        $this->logActivity('2fa_success', "Successful 2FA verification for: {$user->email}");
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'redirect_url' => url('/dashboard')]);
@@ -150,6 +160,10 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        if (Auth::check()) {
+            $user = Auth::user();
+            $this->logActivity('logout', "User logged out: {$user->first_name} {$user->last_name} ({$user->email})");
+        }
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -175,6 +189,7 @@ class AuthController extends Controller
         $user->two_factor_expires_at = now()->addMinutes(2);
         $user->save();
         Mail::to($user->email)->send(new TwoFactorCodeMail($user));
+        $this->logActivity('2fa_resend', "2FA code resent to: {$user->email}");
         return response()->json(['success' => true, 'message' => 'A new code has been sent to your email.']);
     }
 }

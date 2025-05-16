@@ -26,19 +26,19 @@
                             <span class="badge bg-secondary">{{ ucfirst(auth()->user()->role) }}</span>
                         </div>
                     </div>
-                    
-                    <!-- Dashboard Link -->
-                    <a class="nav-link {{ Route::currentRouteName() === 'dashboard' ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                        <i class="fas fa-chart-line me-2"></i>Dashboard
-                    </a>
-
                     <!-- Admin Navigation -->
                     @if(auth()->user()->role === 'admin')
+                        <a class="nav-link {{ Route::currentRouteName() === 'admin.dashboard' ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
                         <a class="nav-link {{ Route::currentRouteName() === 'admin.users.index' ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
                             <i class="fas fa-users-cog me-2"></i>User Management
                         </a>
                         <a class="nav-link {{ Route::currentRouteName() === 'admin.pads.index' ? 'active' : '' }}" href="{{ route('admin.pads.index') }}">
                             <i class="fas fa-building me-2"></i>All Pads
+                        </a>
+                        <a class="nav-link {{ Route::currentRouteName() === 'admin.logs.index' ? 'active' : '' }}" href="{{ route('admin.logs.index') }}">
+                            <i class="fas fa-history me-2"></i>System Logs
                         </a>
                     @endif
 

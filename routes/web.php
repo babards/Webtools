@@ -41,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Admin routes
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('dashboard');
         Route::resource('users', UserController::class);
 
         // Admin Pad Management Routes
@@ -51,6 +52,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('pads/{pad}/edit', [PadController::class, 'adminEdit'])->name('pads.edit');
         Route::put('pads/{pad}', [PadController::class, 'adminupdate'])->name('pads.update');
         Route::delete('pads/{pad}', [PadController::class, 'admindestroy'])->name('pads.destroy');
+
+        // Logs
+        Route::get('/logs', [App\Http\Controllers\Admin\LogController::class, 'index'])->name('logs.index');
     });
 
     // Landlord routes
