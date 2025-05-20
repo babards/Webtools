@@ -77,4 +77,30 @@
         </div>
     </div>
 </div>
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="card-title mb-3">Map Location</h4>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 10px;"></div>
+    </div>
+</div>
+@push('scripts')
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var lat = {{ $pad->latitude ?? 0 }};
+            var lng = {{ $pad->longitude ?? 0 }};
+
+            var map = L.map('map').setView([lat, lng], 16);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            L.marker([lat, lng]).addTo(map)
+                .bindPopup("{{ $pad->padName }}")
+                .openPopup();
+        });
+    </script>
+@endpush
 @endsection

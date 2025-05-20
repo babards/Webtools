@@ -13,16 +13,18 @@ class Pad extends Model
     public $timestamps = false; // We'll handle timestamps manually
 
     protected $table = 'pads';
-    
+
     protected $fillable = [
-        'userID', 
-        'padName', 
-        'padDescription', 
-        'padLocation', 
-        'padRent', 
-        'padImage', 
-        'padStatus', 
-        'padCreatedAt', 
+        'userID',
+        'padName',
+        'padDescription',
+        'padLocation',
+        'padRent',
+        'padImage',
+        'padStatus',
+        'latitude',
+        'longitude',
+        'padCreatedAt',
         'padUpdatedAt',
         'number_of_boarders'
     ];

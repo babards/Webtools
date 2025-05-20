@@ -22,12 +22,12 @@ class PadController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('padName', 'like', "%{$search}%")
-                  ->orWhere('padLocation', 'like', "%{$search}%")
-                  ->orWhere('padDescription', 'like', "%{$search}%")
-                  ->orWhere('padRent', 'like', "%{$search}%")
-                  ->orWhere('padStatus', 'like', "%{$search}%");
+                    ->orWhere('padLocation', 'like', "%{$search}%")
+                    ->orWhere('padDescription', 'like', "%{$search}%")
+                    ->orWhere('padRent', 'like', "%{$search}%")
+                    ->orWhere('padStatus', 'like', "%{$search}%");
             });
         }
 
@@ -67,9 +67,20 @@ class PadController extends Controller
             'padRent' => 'required|numeric',
             'padStatus' => 'required|in:available,occupied,maintenance',
             'padImage' => 'nullable|image',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
         ]);
 
-        $data = $request->only(['padName', 'padDescription', 'padLocation', 'padRent', 'padStatus']);
+        $data = $request->only([
+            'padName',
+            'padDescription',
+            'padLocation',
+            'padRent',
+            'padStatus',
+            'latitude',
+            'longitude'
+        ]);
+
         $data['userID'] = auth()->id();
         $data['padCreatedAt'] = now();
         $data['padUpdatedAt'] = now();
@@ -85,6 +96,7 @@ class PadController extends Controller
         return redirect()->route('landlord.pads.index')->with('success', 'Pad created successfully!');
     }
 
+
     public function update(Request $request, $id)
     {
         $pad = \App\Models\Pad::findOrFail($id);
@@ -95,9 +107,20 @@ class PadController extends Controller
             'padRent' => 'required|numeric',
             'padStatus' => 'required|in:available,occupied,maintenance',
             'padImage' => 'nullable|image',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
         ]);
 
-        $data = $request->only(['padName', 'padDescription', 'padLocation', 'padRent', 'padStatus']);
+        $data = $request->only([
+            'padName',
+            'padDescription',
+            'padLocation',
+            'padRent',
+            'padStatus',
+            'latitude',
+            'longitude',
+        ]);
+
         $data['padUpdatedAt'] = now();
 
         if ($request->hasFile('padImage')) {
@@ -110,6 +133,7 @@ class PadController extends Controller
 
         return redirect()->route('landlord.pads.index')->with('success', 'Pad updated successfully!');
     }
+
 
     public function destroy($id)
     {
@@ -135,19 +159,19 @@ class PadController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('padName', 'like', "%{$search}%")
-                  ->orWhere('padLocation', 'like', "%{$search}%")
-                  ->orWhere('padDescription', 'like', "%{$search}%")
-                  ->orWhere('padRent', 'like', "%{$search}%")
-                  ->orWhere('padStatus', 'like', "%{$search}%")
-                  ->orWhereHas('landlord', function($q2) use ($search) {
-                      $q2->where('first_name', 'like', "%{$search}%")
-                          ->orWhere('last_name', 'like', "%{$search}%");
-                  });
-            })->orWhereHas('landlord', function($q) use ($search) { // Search by landlord name
+                    ->orWhere('padLocation', 'like', "%{$search}%")
+                    ->orWhere('padDescription', 'like', "%{$search}%")
+                    ->orWhere('padRent', 'like', "%{$search}%")
+                    ->orWhere('padStatus', 'like', "%{$search}%")
+                    ->orWhereHas('landlord', function ($q2) use ($search) {
+                        $q2->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
+            })->orWhereHas('landlord', function ($q) use ($search) { // Search by landlord name
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%");
+                    ->orWhere('last_name', 'like', "%{$search}%");
             });
         }
 
@@ -194,6 +218,8 @@ class PadController extends Controller
             'padStatus' => 'required|in:available,occupied,maintenance',
             'userID' => 'required|exists:users,id',
             'padImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
@@ -203,7 +229,17 @@ class PadController extends Controller
                 ->with('form_type', 'create');
         }
 
-        $data = $request->only(['padName', 'padDescription', 'padLocation', 'padRent', 'padStatus', 'userID']);
+        $data = $request->only([
+            'padName',
+            'padDescription',
+            'padLocation',
+            'padRent',
+            'padStatus',
+            'userID',
+            'latitude',
+            'longitude'
+        ]);
+
         $data['padCreatedAt'] = now();
         $data['padUpdatedAt'] = now();
 
@@ -218,9 +254,11 @@ class PadController extends Controller
         return redirect()->route('admin.pads.index')->with('success', 'Pad created successfully!');
     }
 
+
     public function adminupdate(Request $request, $id)
     {
         $pad = Pad::findOrFail($id);
+
         $validator = Validator::make($request->all(), [
             'padName' => 'required|string|max:255',
             'padLocation' => 'required|string|max:255',
@@ -228,6 +266,8 @@ class PadController extends Controller
             'padStatus' => 'required|in:available,occupied,maintenance',
             'userID' => 'required|exists:users,id',
             'padImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
@@ -238,7 +278,16 @@ class PadController extends Controller
                 ->with('failed_pad_id', $id);
         }
 
-        $data = $request->only(['padName', 'padDescription', 'padLocation', 'padRent', 'padStatus', 'userID']);
+        $data = $request->only([
+            'padName',
+            'padDescription',
+            'padLocation',
+            'padRent',
+            'padStatus',
+            'userID',
+            'latitude',
+            'longitude'
+        ]);
         $data['padUpdatedAt'] = now();
 
         if ($request->hasFile('padImage')) {
@@ -251,6 +300,7 @@ class PadController extends Controller
 
         return redirect()->route('admin.pads.index')->with('success', 'Pad updated successfully!');
     }
+
 
     public function admindestroy($id)
     {
@@ -276,16 +326,16 @@ class PadController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('padName', 'like', "%{$search}%")
-                  ->orWhere('padLocation', 'like', "%{$search}%")
-                  ->orWhere('padDescription', 'like', "%{$search}%")
-                  ->orWhere('padRent', 'like', "%{$search}%")
-                  ->orWhere('padStatus', 'like', "%{$search}%")
-                  ->orWhereHas('landlord', function($q2) use ($search) {
-                      $q2->where('first_name', 'like', "%{$search}%")
-                          ->orWhere('last_name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('padLocation', 'like', "%{$search}%")
+                    ->orWhere('padDescription', 'like', "%{$search}%")
+                    ->orWhere('padRent', 'like', "%{$search}%")
+                    ->orWhere('padStatus', 'like', "%{$search}%")
+                    ->orWhereHas('landlord', function ($q2) use ($search) {
+                        $q2->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -369,19 +419,19 @@ class PadController extends Controller
         // Search filter (searches pad name, location, message, and status)
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $applications = $applications->where(function($q) use ($search) {
-                $q->whereHas('pad', function($q2) use ($search) {
+            $applications = $applications->where(function ($q) use ($search) {
+                $q->whereHas('pad', function ($q2) use ($search) {
                     $q2->where('padName', 'like', "%{$search}%")
                         ->orWhere('padLocation', 'like', "%{$search}%");
                 })
-                ->orWhere('message', 'like', "%{$search}%")
-                ->orWhere('status', 'like', "%{$search}%");
+                    ->orWhere('message', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%");
             });
         }
 
         // Pad name filter
         if ($request->filled('pad_filter')) {
-            $applications = $applications->whereHas('pad', function($q) use ($request) {
+            $applications = $applications->whereHas('pad', function ($q) use ($request) {
                 $q->where('padName', $request->input('pad_filter'));
             });
         }
@@ -424,7 +474,7 @@ class PadController extends Controller
 
             // Increment number of boarders
             $pad->increment('number_of_boarders');
-            
+
             // Optionally, you might want to change pad status if it reaches capacity,
             // or reject other pending applications for this pad. For now, just approve.
 
@@ -460,28 +510,28 @@ class PadController extends Controller
     public function landlordAllApplications(Request $request)
     {
         $applications = \App\Models\PadApplication::with(['pad', 'tenant'])
-            ->whereHas('pad', function($query) {
+            ->whereHas('pad', function ($query) {
                 $query->where('userID', auth()->id());
             });
 
         // Search filter (searches pad name, tenant name, and message)
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $applications = $applications->where(function($q) use ($search) {
-                $q->whereHas('pad', function($q2) use ($search) {
+            $applications = $applications->where(function ($q) use ($search) {
+                $q->whereHas('pad', function ($q2) use ($search) {
                     $q2->where('padName', 'like', "%{$search}%");
                 })
-                ->orWhereHas('tenant', function($q2) use ($search) {
-                    $q2->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%");
-                })
-                ->orWhere('message', 'like', "%{$search}%");
+                    ->orWhereHas('tenant', function ($q2) use ($search) {
+                        $q2->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    })
+                    ->orWhere('message', 'like', "%{$search}%");
             });
         }
 
         // Pad name filter
         if ($request->filled('pad_filter')) {
-            $applications = $applications->whereHas('pad', function($q) use ($request) {
+            $applications = $applications->whereHas('pad', function ($q) use ($request) {
                 $q->where('padName', $request->input('pad_filter'));
             });
         }
