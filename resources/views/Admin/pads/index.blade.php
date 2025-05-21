@@ -93,6 +93,14 @@
                                 <p class="card-text text-muted mb-1">Landlord: {{ $pad->landlord->first_name ?? 'N/A' }}
                                     {{ $pad->landlord->last_name ?? '' }}
                                 </p>
+
+                                @if ($pad->number_of_boarders >= $pad->vacancy)
+                                    <p class="card-text text-muted mb-1"><strong>Vacant:</strong>
+                                    Full</p>
+                                @else
+                                    <p class="card-text text-muted mb-1"><strong>Vacant:</strong>
+                                    {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
+                                @endif
                                 <p class="card-text text-muted mb-1"><strong>Boarders:</strong>
                                     {{ $pad->number_of_boarders ?? 0 }}</p>
                             </div>
@@ -103,7 +111,7 @@
                                 data-bs-target="#editPadModal" data-id="{{ $pad->padID }}" data-name="{{ $pad->padName }}"
                                 data-description="{{ $pad->padDescription }}" data-location="{{ $pad->padLocation }}"
                                 data-rent="{{ $pad->padRent }}" data-status="{{ $pad->padStatus }}"
-                                data-latitude="{{ $pad->latitude }}" data-longitude="{{ $pad->longitude }}"
+                                data-latitude="{{ $pad->latitude }}" data-longitude="{{ $pad->longitude }}" data-vacancy="{{ $pad->vacancy }}"
                                 data-landlord-id="{{ $pad->userID }}">
                                 Edit
                             </button>
@@ -164,6 +172,10 @@
                             <div class="mb-3">
                                 <label>Rent</label>
                                 <input type="number" name="padRent" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label>Vacancy</label>
+                                <input type="number" name="vacancy" class="form-control" required>
                             </div>
                             <div class="mb-3">
                                 <label>Status</label>
@@ -247,6 +259,10 @@
                             <div class="mb-3">
                                 <label>Rent</label>
                                 <input type="number" name="padRent" id="editPadRent" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label>Vacancy</label>
+                                <input type="number" name="vacancy" id="editPadVacancy" class="form-control" required>
                             </div>
                             <div class="mb-3">
                                 <label>Status</label>
@@ -513,6 +529,7 @@
                         description: this.dataset.description || '',
                         location: this.dataset.location || '',
                         rent: this.dataset.rent || '',
+                        vacancy: this.dataset.vacancy || '',
                         status: this.dataset.status || '',
                         latitude: this.dataset.latitude || '',
                         longitude: this.dataset.longitude || '',
@@ -525,6 +542,7 @@
                     document.getElementById('editPadDescription').value = this.dataset.description || '';
                     document.getElementById('editPadLocation').value = this.dataset.location || '';
                     document.getElementById('editPadRent').value = this.dataset.rent || '';
+                    document.getElementById('editPadVacancy').value = this.dataset.vacancy || '';
                     document.getElementById('editPadStatus').value = this.dataset.status || '';
                     document.getElementById('editLatitude').value = this.dataset.latitude || '';
                     document.getElementById('editLongitude').value = this.dataset.longitude || '';
@@ -556,6 +574,7 @@
                     document.getElementById('editPadDescription').value = originalEditPadData.description;
                     document.getElementById('editPadLocation').value = originalEditPadData.location;
                     document.getElementById('editPadRent').value = originalEditPadData.rent;
+                    document.getElementById('editPadVacancy').value = originalEditPadData.vacancy;
                     document.getElementById('editPadStatus').value = originalEditPadData.status;
                     document.getElementById('editLatitude').value = originalEditPadData.latitude;
                     document.getElementById('editLongitude').value = originalEditPadData.longitude;

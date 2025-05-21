@@ -24,6 +24,7 @@ class Pad extends Model
         'padStatus',
         'latitude',
         'longitude',
+        'vacancy',
         'padCreatedAt',
         'padUpdatedAt',
         'number_of_boarders'

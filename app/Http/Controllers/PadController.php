@@ -65,6 +65,7 @@ class PadController extends Controller
             'padName' => 'required',
             'padLocation' => 'required',
             'padRent' => 'required|numeric',
+            'vacancy' => 'required|numeric',
             'padStatus' => 'required|in:available,occupied,maintenance',
             'padImage' => 'nullable|image',
             'latitude' => 'required|numeric',
@@ -76,6 +77,7 @@ class PadController extends Controller
             'padDescription',
             'padLocation',
             'padRent',
+            'vacancy',
             'padStatus',
             'latitude',
             'longitude'
@@ -105,6 +107,7 @@ class PadController extends Controller
             'padName' => 'required',
             'padLocation' => 'required',
             'padRent' => 'required|numeric',
+            'vacancy' => 'required|numeric',
             'padStatus' => 'required|in:available,occupied,maintenance',
             'padImage' => 'nullable|image',
             'latitude' => 'required|numeric',
@@ -116,6 +119,7 @@ class PadController extends Controller
             'padDescription',
             'padLocation',
             'padRent',
+            'vacancy',
             'padStatus',
             'latitude',
             'longitude',
@@ -215,6 +219,7 @@ class PadController extends Controller
             'padName' => 'required|string|max:255',
             'padLocation' => 'required|string|max:255',
             'padRent' => 'required|numeric|min:0',
+            'vacancy' => 'required|numeric|min:0',
             'padStatus' => 'required|in:available,occupied,maintenance',
             'userID' => 'required|exists:users,id',
             'padImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -234,6 +239,7 @@ class PadController extends Controller
             'padDescription',
             'padLocation',
             'padRent',
+            'vacancy',
             'padStatus',
             'userID',
             'latitude',
@@ -263,6 +269,7 @@ class PadController extends Controller
             'padName' => 'required|string|max:255',
             'padLocation' => 'required|string|max:255',
             'padRent' => 'required|numeric|min:0',
+            'vacancy' => 'required|numeric|min:0',
             'padStatus' => 'required|in:available,occupied,maintenance',
             'userID' => 'required|exists:users,id',
             'padImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -283,6 +290,7 @@ class PadController extends Controller
             'padDescription',
             'padLocation',
             'padRent',
+            'vacancy',
             'padStatus',
             'userID',
             'latitude',
@@ -474,6 +482,7 @@ class PadController extends Controller
 
             // Increment number of boarders
             $pad->increment('number_of_boarders');
+            $this->checkAndUpdatePadStatus($pad->padID);
 
             // Optionally, you might want to change pad status if it reaches capacity,
             // or reject other pending applications for this pad. For now, just approve.
@@ -565,4 +574,18 @@ class PadController extends Controller
 
         return redirect()->back()->with('success', 'Application cancelled successfully.');
     }
+
+    public function checkAndUpdatePadStatus($padId)
+    {
+        $pad = Pad::findOrFail($padId);
+
+        if ($pad->number_of_boarders >= $pad->vacancy) {
+            $pad->padStatus = 'occupied';
+        } elseif ($pad->number_of_boarders < $pad->vacancy) {
+            $pad->padStatus = 'available';
+        }
+
+        $pad->save();
+    }
+
 }
