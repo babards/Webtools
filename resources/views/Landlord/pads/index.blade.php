@@ -511,7 +511,6 @@
                 }
                 mapStepEdit.style.display = 'none';
                 formStepEdit.style.display = 'block';
-
                 nextButtonEdit.style.display = 'none';
                 backButtonEdit.style.display = 'inline-block';
                 submitButtonEdit.style.display = 'inline-block';
