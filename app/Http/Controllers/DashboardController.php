@@ -17,8 +17,8 @@ class DashboardController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
-        switch($user->role) {
+
+        switch ($user->role) {
             case 'admin':
                 return redirect()->route('admin.dashboard');
             case 'landlord':
@@ -42,6 +42,10 @@ class DashboardController extends Controller
             'pending_applications' => PadApplication::where('status', 'pending')->count(),
         ];
 
-        return view('admin.dashboard', compact('stats'));
+        // ✅ Fetch pads with location data
+        $pads = Pad::select('padID', 'padName', 'padLocation', 'padRent', 'latitude', 'longitude')->get();
+        return view('admin.dashboard', compact('stats', 'pads'));
+
     }
-} 
+
+}

@@ -22,9 +22,10 @@
                     <select name="landlord_filter" class="form-select" onchange="this.form.submit()">
                         <option value="">All Landlords</option>
                         @foreach($landlords as $landlord)
-                            <option value="{{ $landlord->id }}" {{ request('landlord_filter') == $landlord->id ? 'selected' : '' }}>
-                                {{ $landlord->first_name }} {{ $landlord->last_name }}
-                            </option>
+                        <option value="{{ $landlord->id }}" {{ request('landlord_filter')==$landlord->id ? 'selected' : ''
+                            }}>
+                            {{ $landlord->first_name ?? ''}} {{ $landlord->last_name ?? '' }}
+                        </option>
                         @endforeach
                     </select>
                 </div>
@@ -101,8 +102,9 @@
                             <button type="button" class="btn btn-warning editPadBtn" data-bs-toggle="modal"
                                 data-bs-target="#editPadModal" data-id="{{ $pad->padID }}" data-name="{{ $pad->padName }}"
                                 data-description="{{ $pad->padDescription }}" data-location="{{ $pad->padLocation }}"
-                                data-rent="{{ $pad->padRent }}" data-status="{{ $pad->padStatus }}" data-latitude="{{ $pad->latitude }}"
-                                data-longitude="{{ $pad->longitude }}" data-landlord-id="{{ $pad->userID }}" >
+                                data-rent="{{ $pad->padRent }}" data-status="{{ $pad->padStatus }}"
+                                data-latitude="{{ $pad->latitude }}" data-longitude="{{ $pad->longitude }}"
+                                data-landlord-id="{{ $pad->userID }}">
                                 Edit
                             </button>
                             <button class="btn btn-danger btn-sm deletePadBtn" data-id="{{ $pad->padID }}"
@@ -177,13 +179,14 @@
                                 <select class="form-select" id="createPadLandlord" name="userID" required>
                                     <option value="">Select a Landlord</option>
                                     @if(isset($landlords))
-                                        @foreach($landlords as $landlord)
-                                            <option value="{{ $landlord->id }}" {{ old('userID') == $landlord->id ? 'selected' : '' }}>
-                                                {{ $landlord->first_name }} {{ $landlord->last_name }} ({{ $landlord->email }})
-                                            </option>
-                                        @endforeach
+                                    @foreach($landlords as $landlord)
+                                    <option value="{{ $landlord->id }}" {{ old('userID')==$landlord->id ? 'selected' : ''
+                                        }}>
+                                        {{ $landlord->first_name }} {{ $landlord->last_name }} ({{ $landlord->email }})
+                                    </option>
+                                    @endforeach
                                     @else
-                                        <option value="" disabled>No landlords available</option>
+                                    <option value="" disabled>No landlords available</option>
                                     @endif
                                 </select>
                             </div>
@@ -230,7 +233,7 @@
                             </div>
                         </div>
 
-                         {{-- Step 2: Form --}}
+                        {{-- Step 2: Form --}}
                         <div id="formStepEdit" style="display: none;">
                             <input type="hidden" name="padID" id="editPadId">
                             <div class="mb-3">
@@ -275,7 +278,7 @@
                             </div>
 
                         </div>
-                        
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-danger" id="cancelButtonEdit">Cancel</button>
@@ -386,6 +389,7 @@
 
                             reverseGeocode(e.latlng.lat, e.latlng.lng, 'padLocation');
                         });
+
                     }
                     setTimeout(() => map.invalidateSize(), 100);
                 });
@@ -463,41 +467,6 @@
                 }
             });
 
-            // Re-show modal on validation errors
-//           @if ($errors->any())
-//     <script>
-//         document.addEventListener('DOMContentLoaded', function () {
-//             @if (old('form_type') === 'create')
-//                 // Show Create Modal
-//                 var createModal = new bootstrap.Modal(document.getElementById('createPadModal'));
-//                 createModal.show();
-//             @elseif (old('form_type') === 'edit' && old('padID_for_edit'))
-//                 // Show Edit Modal
-//                 var editModalEl = document.getElementById('editPadModal');
-//                 var editModal = new bootstrap.Modal(editModalEl);
-//                 var padID = @json(old('padID_for_edit')); // safely outputs string or null
-
-//                 // Set form action dynamically
-//                 editModalEl.querySelector('#editPadForm').action = "{{ url('admin/pads') }}/" + padID;
-
-//                 // Set form field values
-//                 document.getElementById('editPadName').value = @json(old('padName', ''));
-//                 document.getElementById('editPadDescription').value = @json(old('padDescription', ''));
-//                 document.getElementById('editPadLocation').value = @json(old('padLocation', ''));
-//                 document.getElementById('editPadRent').value = @json(old('padRent', ''));
-//                 document.getElementById('editPadStatus').value = @json(old('padStatus', 'available'));
-//                 document.getElementById('editPadLandlord').value = @json(old('userID', ''));
-
-//                 // File inputs cannot be restored for security reasons
-
-//                 editModal.show();
-//             @endif
-//         });
-//     </script>
-// @endif
-
-
-
             // Edit Pad Modal
             let originalEditPadData = {};
             const mapStepEdit = document.getElementById('mapStepEdit');
@@ -526,6 +495,7 @@
                         document.getElementById('editLongitude').value = e.latlng.lng;
                         reverseGeocode(e.latlng.lat, e.latlng.lng, 'editPadLocation');
                     });
+                    
                 } else {
                     editMap.setView([lat, lng], 14);
                     if (editMarker) editMap.removeLayer(editMarker);
@@ -545,7 +515,8 @@
                         rent: this.dataset.rent || '',
                         status: this.dataset.status || '',
                         latitude: this.dataset.latitude || '',
-                        longitude: this.dataset.longitude || ''
+                        longitude: this.dataset.longitude || '',
+                        landlordId: this.dataset.landlordId || ''
                     };
 
                     // Fill form fields
@@ -557,6 +528,7 @@
                     document.getElementById('editPadStatus').value = this.dataset.status || '';
                     document.getElementById('editLatitude').value = this.dataset.latitude || '';
                     document.getElementById('editLongitude').value = this.dataset.longitude || '';
+                    document.getElementById('editPadLandlord').value = this.dataset.landlordId || '';
                     document.getElementById('editPadForm').action = '/admin/pads/' + this.dataset.id;
 
                     const lat = parseFloat(this.dataset.latitude) || 7.9092;
@@ -645,8 +617,6 @@
                 });
             }
 
-
-
             // Delete Pad buttons
             document.querySelectorAll('.deletePadBtn').forEach(function (button) {
                 button.addEventListener('click', function () {
@@ -659,8 +629,41 @@
                 });
             });
 
+        // Re-show modal on validation errors
+        // @if ($errors->any())
+            //     <script>
+            //         document.addEventListener('DOMContentLoaded', function () {
+            //             @if (old('form_type') === 'create')
+                //                 // Show Create Modal
+                //                 var createModal = new bootstrap.Modal(document.getElementById('createPadModal'));
+                //                 createModal.show();
+            //             @elseif (old('form_type') === 'edit' && old('padID_for_edit'))
+                //                 // Show Edit Modal
+                //                 var editModalEl = document.getElementById('editPadModal');
+                //                 var editModal = new bootstrap.Modal(editModalEl);
+                //                 var padID = @json(old('padID_for_edit')); // safely outputs string or null
 
-        });
+                //                 // Set form action dynamically
+                //                 editModalEl.querySelector('#editPadForm').action = "{{ url('admin/pads') }}/" + padID;
+
+                //                 // Set form field values
+                //                 document.getElementById('editPadName').value = @json(old('padName', ''));
+                //                 document.getElementById('editPadDescription').value = @json(old('padDescription', ''));
+                //                 document.getElementById('editPadLocation').value = @json(old('padLocation', ''));
+                //                 document.getElementById('editPadRent').value = @json(old('padRent', ''));
+                //                 document.getElementById('editPadStatus').value = @json(old('padStatus', 'available'));
+                //                 document.getElementById('editPadLandlord').value = @json(old('userID', ''));
+
+                //                 // File inputs cannot be restored for security reasons
+
+                //                 editModal.show();
+            //             @endif
+            //         });
+            //     </script>
+        // @endif
+
+
+    });
 
     </script>
 
@@ -679,5 +682,5 @@
             /* Or your preferred height */
             object-fit: cover;
         }
-    </style>    
+    </style>
 @endpush
