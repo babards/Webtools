@@ -70,6 +70,9 @@
                 <a href="{{ route('landlord.pads.applications', $pad->padID) }}" class="btn btn-primary">
                     View Applications
                 </a>
+                <a href="{{ route('landlord.pads.boarders', $pad->padID) }}" class="btn btn-primary">
+                    View Boarders
+                </a>
                 <a href="{{ route('landlord.pads.index') }}" class="btn btn-outline-secondary">
                     Back to List
                 </a>

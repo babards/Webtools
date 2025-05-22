@@ -52,6 +52,9 @@
                         <a class="nav-link {{ Route::currentRouteName() === 'landlord.applications.all' ? 'active' : '' }}" href="{{ route('landlord.applications.all') }}">
                             <i class="fas fa-file-alt me-2"></i>View Applications
                         </a>
+                        <a class="nav-link {{ Route::currentRouteName() === 'landlord.boarders.all' ? 'active' : '' }}" href="{{ route('landlord.boarders.all') }}">
+                            <i class="fas fa-users me-2"></i>View Boarders
+                        </a>
                     @endif
 
                     <!-- Tenant Navigation -->

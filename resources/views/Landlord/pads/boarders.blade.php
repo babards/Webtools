@@ -9,18 +9,22 @@
             <thead>
                 <tr>
                     <th>Tenant Name</th>
-                    <th>Application Date</th>
-                    <th>Contact</th>
-                    <th>Email</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($boarders as $boarder)
                     <tr>
                         <td>{{ $boarder->tenant->first_name ?? 'N/A' }} {{ $boarder->tenant->last_name ?? '' }}</td>
-                        <td>{{ $boarder->application_date->format('Y-m-d') }}</td>
-                        <td>{{ $boarder->tenant->contact ?? 'N/A' }}</td>
-                        <td>{{ $boarder->tenant->email ?? 'N/A' }}</td>
+                        @php
+                            $start = \Carbon\Carbon::parse($boarder->created_at);
+                            $now = \Carbon\Carbon::now();
+                            $diff = $start->diff($now);
+                        @endphp
+                        <td>{{ $diff->m }} months and {{ $diff->d }} days</td>
+                        <td>{{ $boarder->status ?? 'N/A' }}</td>
                     </tr>
                 @endforeach
             </tbody>

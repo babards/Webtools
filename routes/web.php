@@ -72,6 +72,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/applications/{applicationId}/approve', [PadController::class, 'landlordApproveApplication'])->name('applications.approve');
         Route::post('/applications/{applicationId}/reject', [PadController::class, 'landlordRejectApplication'])->name('applications.reject');
         Route::get('/applications', [PadController::class, 'landlordAllApplications'])->name('applications.all');
+        Route::get('/pads/{padId}/boarders', [PadController::class, 'landlordViewBoarders'])->name('pads.boarders');
+        Route::get('/boarders', [PadController::class, 'landlordAllBoarders'])->name('boarders.all');
+        Route::post('/boarders/{boardersId}/kicked', [PadController::class, 'landlordKickBoarders'])->name('boarders.kicked');
     });
 
     // Tenant routes

@@ -41,4 +41,9 @@ class Pad extends Model
     {
         return $this->hasMany(PadApplication::class, 'pad_id', 'padID');
     }
+
+    public function boarders()
+    {
+        return $this->hasMany(PadBoarder::class, 'pad_id', 'padID');
+    }
 }
