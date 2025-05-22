@@ -9,53 +9,46 @@
             </button>
         </div>
 
-        <form method="GET" action="{{ route('admin.pads.index') }}" class="mb-3">
-            <div class="row g-3">
+        <form method="GET" action="{{ route('admin.pads.index') }}" class="mb-4">
+            <div class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <div class="input-group">
-                        <input type="text" name="search" class="form-control"
-                            placeholder="Search pads by name, location, landlord..." value="{{ request('search') }}">
-                        <button class="btn btn-outline-secondary" type="submit">Search</button>
+                        <input type="text" name="search" class="form-control" placeholder="Search pads by name, location, landlord..." value="{{ request('search') }}">
+                        <button class="btn btn-primary" type="submit">Search</button>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <select name="landlord_filter" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Landlords</option>
-                        @foreach($landlords as $landlord)
-                        <option value="{{ $landlord->id }}" {{ request('landlord_filter')==$landlord->id ? 'selected' : ''
-                            }}>
-                            {{ $landlord->first_name ?? ''}} {{ $landlord->last_name ?? '' }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
                     <select name="location_filter" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Locations</option>
-                        @foreach($pads->pluck('padLocation')->unique() as $location)
-                            <option value="{{ $location }}" {{ request('location_filter') == $location ? 'selected' : '' }}>
-                                {{ $location }}
-                            </option>
+                        <option value="">All Cities</option>
+                        @foreach($pads->pluck('padLocation')->map(function($loc) {
+                            $parts = explode(',', $loc);
+                            return isset($parts[2]) ? trim($parts[2]) : trim($loc);
+                        })->unique()->sort() as $city)
+                            <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-2">
                     <select name="price_filter" class="form-select" onchange="this.form.submit()">
                         <option value="">All Prices</option>
-                        <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below
-                            ₱1,000</option>
-                        <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 -
-                            ₱2,000
-                        </option>
-                        <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 -
-                            ₱3,000
-                        </option>
-                        <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above
-                            ₱3,000</option>
+                        <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below ₱1,000</option>
+                        <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 - ₱2,000</option>
+                        <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 - ₱3,000</option>
+                        <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above ₱3,000</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <a href="{{ route('admin.pads.index') }}" class="btn btn-outline-secondary w-100">Reset Filters</a>
+                    <select name="landlord_filter" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Landlords</option>
+                        @foreach($landlords as $landlord)
+                            <option value="{{ $landlord->id }}" {{ request('landlord_filter')==$landlord->id ? 'selected' : '' }}>
+                                {{ $landlord->first_name ?? ''}} {{ $landlord->last_name ?? '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <a href="{{ route('admin.pads.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
                 </div>
             </div>
         </form>
@@ -75,7 +68,7 @@
         <div class="row">
             @forelse($pads as $pad)
                 <div class="col-md-3 mb-4" id="pad-card-{{ $pad->padID }}">
-                    <div class="card h-100 shadow-sm">
+                    <div class="card h-100 d-flex flex-column shadow-sm">
                         <a href="{{ route('admin.pads.show', $pad->padID) }}" style="text-decoration: none; color: inherit;">
                             @if($pad->padImage)
                                 <img src="{{ asset('storage/' . $pad->padImage) }}" class="card-img-top"
@@ -106,26 +99,26 @@
                             </div>
                         </a>
                         {{-- data-image-url="{{ $pad->padImage ? asset('storage/' . $pad->padImage) : '' }}"> --}}
-                        <div class="card-footer bg-white border-0 d-flex gap-2 mt-3">
-                            <button type="button" class="btn btn-warning editPadBtn" data-bs-toggle="modal"
+                        <div class="card-footer bg-white border-0 d-flex gap-2 mt-auto">
+                            <button type="button" class="btn btn-warning btn-sm editPadBtn" data-bs-toggle="modal"
                                 data-bs-target="#editPadModal" data-id="{{ $pad->padID }}" data-name="{{ $pad->padName }}"
                                 data-description="{{ $pad->padDescription }}" data-location="{{ $pad->padLocation }}"
                                 data-rent="{{ $pad->padRent }}" data-status="{{ $pad->padStatus }}"
                                 data-latitude="{{ $pad->latitude }}" data-longitude="{{ $pad->longitude }}" data-vacancy="{{ $pad->vacancy }}"
                                 data-landlord-id="{{ $pad->userID }}">
-                                Edit
+                                <i class="fas fa-edit"></i>
                             </button>
                             <button class="btn btn-danger btn-sm deletePadBtn" data-id="{{ $pad->padID }}"
                                 data-name="{{ $pad->padName }}" data-bs-toggle="modal" data-bs-target="#deletePadModal"
                                 style="color:#fff;">
-                                Delete
+                                <i class="fas fa-trash"></i>
                             </button>
                         </div>
                     </div>
                 </div>
             @empty
-                <div class="col">
-                    <div class="text-center text-muted py-3">No pads found.</div>
+                <div class="col-12">
+                    <div class="alert alert-info text-center">No pads found.</div>
                 </div>
             @endforelse
         </div>
@@ -150,7 +143,7 @@
                     <div class="modal-body">
                         <!-- Step 1: Map -->
                         <div id="mapStep">
-                            <div id="map" style="height: 600px;"></div>
+                            <div id="map" style="height: 400px;"></div>
                             <input type="hidden" name="latitude" id="latitude">
                             <input type="hidden" name="longitude" id="longitude">
                             <div class="mb-3">
@@ -236,7 +229,7 @@
 
                         {{-- Step 1: Location --}}
                         <div id="mapStepEdit">
-                            <div id="editMap" style="height: 600px;"></div>
+                            <div id="editMap" style="height: 400px;"></div>
                             <input type="hidden" name="latitude" id="editLatitude">
                             <input type="hidden" name="longitude" id="editLongitude">
                             <div class="mb-3">

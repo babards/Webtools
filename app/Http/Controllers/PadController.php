@@ -34,7 +34,8 @@ class PadController extends Controller
 
         // Add location filter
         if ($request->filled('location_filter')) {
-            $query->where('padLocation', $request->input('location_filter'));
+            $city = $request->input('location_filter');
+            $query->whereRaw("TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(padLocation, ',', 3), ',', -1)) LIKE ?", ["%$city%"]);
         }
 
         // Add price range filter
@@ -194,7 +195,8 @@ class PadController extends Controller
 
         // Add location filter
         if ($request->filled('location_filter')) {
-            $query->where('padLocation', $request->input('location_filter'));
+            $city = $request->input('location_filter');
+            $query->whereRaw("TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(padLocation, ',', 3), ',', -1)) LIKE ?", ["%$city%"]);
         }
 
         // Add price range filter
@@ -338,7 +340,8 @@ class PadController extends Controller
     public function adminShow($id)
     {
         $pad = \App\Models\Pad::findOrFail($id);
-        return view('admin.pads.show', compact('pad'));
+        $landlords = \App\Models\User::where('role', 'landlord')->orderBy('first_name')->get();
+        return view('admin.pads.show', compact('pad', 'landlords'));
     }
 
     // Tenant view of available pads
@@ -368,7 +371,8 @@ class PadController extends Controller
 
         // Location filter
         if ($request->filled('location_filter')) {
-            $query->where('padLocation', $request->input('location_filter'));
+            $city = $request->input('location_filter');
+            $query->whereRaw("TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(padLocation, ',', 3), ',', -1)) LIKE ?", ["%$city%"]);
         }
 
         // Price range filter
@@ -482,8 +486,9 @@ class PadController extends Controller
     // Landlord approves an application
     public function landlordApproveApplication(Request $request, $applicationId)
     {
-        $application = PadApplication::with('pad')->findOrFail($applicationId);
+        $application = PadApplication::with(['pad', 'tenant'])->findOrFail($applicationId);
         $pad = $application->pad;
+        $tenant = $application->tenant;
 
         // Ensure the authenticated user is the landlord of the pad
         if ($pad->userID !== Auth::id()) {
@@ -496,6 +501,7 @@ class PadController extends Controller
 
             // Increment number of boarders
             $pad->increment('number_of_boarders');
+
             $this->checkAndUpdatePadStatus($pad->padID);
 
             // Add the tenant to pad_boarders table
@@ -507,11 +513,11 @@ class PadController extends Controller
 
 
             //check if the vacancy is full and if full update the status of the pad into occupied, not full into available
-
             // Optionally, you might want to change pad status if it reaches capacity,
             // or reject other pending applications for this pad. For now, just approve.
 
-            $this->logActivity('approve_application', "Approved application for pad: {$pad->padName}");
+            $tenantInfo = $tenant ? $tenant->first_name . ' ' . $tenant->last_name . ' (' . $tenant->email . ')' : 'Unknown Tenant';
+            $this->logActivity('approve_application', "Approved application for pad: {$pad->padName} | Tenant: {$tenantInfo}");
 
             return redirect()->back()->with('success', 'Application approved successfully.');
         }
@@ -521,8 +527,9 @@ class PadController extends Controller
     // Landlord rejects an application
     public function landlordRejectApplication(Request $request, $applicationId)
     {
-        $application = PadApplication::with('pad')->findOrFail($applicationId);
+        $application = PadApplication::with(['pad', 'tenant'])->findOrFail($applicationId);
         $pad = $application->pad;
+        $tenant = $application->tenant;
 
         // Ensure the authenticated user is the landlord of the pad
         if ($pad->userID !== Auth::id()) {
@@ -533,7 +540,8 @@ class PadController extends Controller
             $application->status = 'rejected';
             $application->save();
 
-            $this->logActivity('reject_application', "Rejected application for pad: {$pad->padName}");
+            $tenantInfo = $tenant ? $tenant->first_name . ' ' . $tenant->last_name . ' (' . $tenant->email . ')' : 'Unknown Tenant';
+            $this->logActivity('reject_application', "Rejected application for pad: {$pad->padName} | Tenant: {$tenantInfo}");
 
             return redirect()->back()->with('success', 'Application rejected successfully.');
         }
