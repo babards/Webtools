@@ -24,6 +24,7 @@ class Pad extends Model
         'padStatus',
         'latitude',
         'longitude',
+        'vacancy',
         'padCreatedAt',
         'padUpdatedAt',
         'number_of_boarders'
@@ -39,5 +40,10 @@ class Pad extends Model
     public function applications()
     {
         return $this->hasMany(PadApplication::class, 'pad_id', 'padID');
+    }
+
+    public function boarders()
+    {
+        return $this->hasMany(PadBoarder::class, 'pad_id', 'padID');
     }
 }

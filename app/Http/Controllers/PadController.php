@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use App\Models\PadApplication;
+use App\Models\PadBoarder;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\LogsActivity;
 
@@ -66,6 +67,7 @@ class PadController extends Controller
             'padName' => 'required',
             'padLocation' => 'required',
             'padRent' => 'required|numeric',
+            'vacancy' => 'required|numeric',
             'padStatus' => 'required|in:available,occupied,maintenance',
             'padImage' => 'nullable|image',
             'latitude' => 'required|numeric',
@@ -77,6 +79,7 @@ class PadController extends Controller
             'padDescription',
             'padLocation',
             'padRent',
+            'vacancy',
             'padStatus',
             'latitude',
             'longitude'
@@ -90,7 +93,11 @@ class PadController extends Controller
             $data['padImage'] = $request->file('padImage')->store('pads', 'public');
         }
 
-        $pad = \App\Models\Pad::create($data);
+        $pad = Pad::create($data);
+
+        //check if the vacancy is full and if full update the status of the pad into occupied, not full into available
+        $this->checkAndUpdatePadStatus($pad->padID);
+
 
         $this->logActivity('create_pad', "Created new pad: {$pad->padName}");
 
@@ -106,6 +113,7 @@ class PadController extends Controller
             'padName' => 'required',
             'padLocation' => 'required',
             'padRent' => 'required|numeric',
+            'vacancy' => 'required|numeric',
             'padStatus' => 'required|in:available,occupied,maintenance',
             'padImage' => 'nullable|image',
             'latitude' => 'required|numeric',
@@ -117,6 +125,7 @@ class PadController extends Controller
             'padDescription',
             'padLocation',
             'padRent',
+            'vacancy',
             'padStatus',
             'latitude',
             'longitude',
@@ -129,6 +138,9 @@ class PadController extends Controller
         }
 
         $pad->update($data);
+
+        //check if the vacancy is full and if full update the status of the pad into occupied, not full into available
+        $this->checkAndUpdatePadStatus($pad->padID);
 
         $this->logActivity('update_pad', "Updated pad: {$pad->padName}");
 
@@ -217,6 +229,7 @@ class PadController extends Controller
             'padName' => 'required|string|max:255',
             'padLocation' => 'required|string|max:255',
             'padRent' => 'required|numeric|min:0',
+            'vacancy' => 'required|numeric|min:0',
             'padStatus' => 'required|in:available,occupied,maintenance',
             'userID' => 'required|exists:users,id',
             'padImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -236,6 +249,7 @@ class PadController extends Controller
             'padDescription',
             'padLocation',
             'padRent',
+            'vacancy',
             'padStatus',
             'userID',
             'latitude',
@@ -251,6 +265,9 @@ class PadController extends Controller
 
         $pad = Pad::create($data);
 
+        //check if the vacancy is full and if full update the status of the pad into occupied, not full into available
+        $this->checkAndUpdatePadStatus($pad->padID);
+
         $this->logActivity('admin_create_pad', "Admin created pad: {$pad->padName}");
 
         return redirect()->route('admin.pads.index')->with('success', 'Pad created successfully!');
@@ -265,6 +282,7 @@ class PadController extends Controller
             'padName' => 'required|string|max:255',
             'padLocation' => 'required|string|max:255',
             'padRent' => 'required|numeric|min:0',
+            'vacancy' => 'required|numeric|min:0',
             'padStatus' => 'required|in:available,occupied,maintenance',
             'userID' => 'required|exists:users,id',
             'padImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -285,6 +303,7 @@ class PadController extends Controller
             'padDescription',
             'padLocation',
             'padRent',
+            'vacancy',
             'padStatus',
             'userID',
             'latitude',
@@ -297,6 +316,9 @@ class PadController extends Controller
         }
 
         $pad->update($data);
+
+        //check if the vacancy is full and if full update the status of the pad into occupied, not full into available
+        $this->checkAndUpdatePadStatus($pad->padID);
 
         $this->logActivity('admin_update_pad', "Admin updated pad: {$pad->padName}");
 
@@ -479,7 +501,18 @@ class PadController extends Controller
 
             // Increment number of boarders
             $pad->increment('number_of_boarders');
-            
+
+            $this->checkAndUpdatePadStatus($pad->padID);
+
+            // Add the tenant to pad_boarders table
+            PadBoarder::create([
+                'pad_id' => $pad->padID,
+                'user_id' => $application->user_id,
+                'status' => 'active',
+            ]);
+
+
+            //check if the vacancy is full and if full update the status of the pad into occupied, not full into available
             // Optionally, you might want to change pad status if it reaches capacity,
             // or reject other pending applications for this pad. For now, just approve.
 
@@ -517,7 +550,7 @@ class PadController extends Controller
 
     public function landlordAllApplications(Request $request)
     {
-        $applications = \App\Models\PadApplication::with(['pad', 'tenant'])
+        $applications = PadApplication::with(['pad', 'tenant'])
             ->whereHas('pad', function ($query) {
                 $query->where('userID', auth()->id());
             });
@@ -559,9 +592,91 @@ class PadController extends Controller
         return view('landlord.applications.index', compact('applications'));
     }
 
+    // landlords view boarders
+    public function landlordViewBoarders($padId)
+    {
+        $pad = Pad::where('padID', $padId)->where('userID', Auth::id())->firstOrFail();
+        $boarders = PadBoarder::with('tenant')
+            ->where('pad_id', $pad->padID)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('landlord.pads.boarders', compact('pad', 'boarders'));
+    }
+
+    // view all boarders
+    public function landlordAllBoarders(Request $request)
+    {
+        $boarders = PadBoarder::with(['pad', 'tenant'])
+            ->whereHas('pad', function ($query) {
+                $query->where('userID', auth()->id());
+            });
+
+        // Search filter (searches pad name, tenant name, and message)
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $boarders = $boarders->where(function ($q) use ($search) {
+                $q->whereHas('pad', function ($q2) use ($search) {
+                    $q2->where('padName', 'like', "%{$search}%");
+                })
+                    ->orWhereHas('tenant', function ($q2) use ($search) {
+                        $q2->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    })
+                    ->orWhere('message', 'like', "%{$search}%");
+            });
+        }
+
+        // Pad name filter
+        if ($request->filled('pad_filter')) {
+            $boarders = $boarders->whereHas('pad', function ($q) use ($request) {
+                $q->where('padName', $request->input('pad_filter'));
+            });
+        }
+
+        // Tenant filter
+        if ($request->filled('tenant_filter')) {
+            $boarders = $boarders->where('user_id', $request->input('tenant_filter'));
+        }
+
+        // Status filter
+        if ($request->filled('status_filter')) {
+            $boarders = $boarders->where('status', $request->input('status_filter'));
+        }
+
+        $boarders = $boarders->orderBy('created_at', 'desc')->paginate(15);
+
+        return view('landlord.boarders.index', compact('boarders'));
+    }
+
+    public function landlordKickBoarders(Request $request, $boardersId)
+    {
+        $boarders = PadBoarder::with('pad')->findOrFail($boardersId);
+        $pad = $boarders->pad;
+
+        // Ensure the authenticated user is the landlord of the pad
+        if ($pad->userID !== Auth::id()) {
+            return redirect()->back()->with('error', 'Unauthorized action.');
+        }
+
+        if ($boarders->status === 'active') {
+            $boarders->status = 'kicked';
+            $boarders->save();
+
+            // Increment number of boarders
+            $pad->decrement('number_of_boarders');
+            $this->checkAndUpdatePadStatus($pad->padID);
+
+            $this->logActivity('kicked_boarder', "Kicked boarder for pad: {$pad->padName}");
+
+            return redirect()->back()->with('success', 'Boarder kicked successfully.');
+        }
+        return redirect()->back()->with('error', 'Boarder cannot be kicked.');
+    }
+
     public function tenantCancelApplication($applicationId)
     {
-        $application = \App\Models\PadApplication::where('id', $applicationId)
+        $application = PadApplication::where('id', $applicationId)
             ->where('user_id', Auth::id())
             ->whereIn('status', ['pending', 'approved'])
             ->firstOrFail();
@@ -573,4 +688,19 @@ class PadController extends Controller
 
         return redirect()->back()->with('success', 'Application cancelled successfully.');
     }
+
+    // function for updating the status of the pad
+    public function checkAndUpdatePadStatus($padId)
+    {
+        $pad = Pad::findOrFail($padId);
+
+        if ($pad->number_of_boarders >= $pad->vacancy) {
+            $pad->padStatus = 'occupied';
+        } elseif ($pad->number_of_boarders < $pad->vacancy) {
+            $pad->padStatus = 'available';
+        }
+
+        $pad->save();
+    }
+
 }

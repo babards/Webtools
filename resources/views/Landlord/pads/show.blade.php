@@ -91,6 +91,12 @@
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#applicationsModal">
                     View Applications
                 </button>
+                
+                </a>
+                <a href="{{ route('landlord.pads.boarders', $pad->padID) }}" class="btn btn-primary">
+                    View Boarders
+                </a>
+
                 <a href="{{ route('landlord.pads.index') }}" class="btn btn-outline-secondary">
                     Back to List
                 </a>
