@@ -46,6 +46,11 @@ class PasswordResetController extends Controller
             'token' => 'required'
         ]);
 
+        $user = \App\Models\User::where('email', $request->email)->first();
+        if ($user && \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['password' => 'The new password must be different from your current password.'])->withInput();
+        }
+
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation','token'),
             function (User $user, string $password) {
@@ -54,10 +59,18 @@ class PasswordResetController extends Controller
         );
 
         if ($status === Password::PASSWORD_RESET) {
-            $this->logActivity('password_reset_success', "Password successfully reset for: {$request->email}");
+            if ($user) {
+                $this->logActivity('password_reset_success', "Password successfully reset for: {$request->email}", $user->id);
+            } else {
+                $this->logActivity('password_reset_success', "Password successfully reset for: {$request->email}");
+            }
             return redirect('/login')->with('success', 'Password has been reset successfully.');
         } else {
-            $this->logActivity('password_reset_failed', "Failed password reset attempt for: {$request->email}");
+            if ($user) {
+                $this->logActivity('password_reset_failed', "Failed password reset attempt for: {$request->email}", $user->id);
+            } else {
+                $this->logActivity('password_reset_failed', "Failed password reset attempt for: {$request->email}");
+            }
             return back()->withErrors(['email' => 'Invalid or expired token.']);
         }
     }
