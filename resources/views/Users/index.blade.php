@@ -2,9 +2,9 @@
 
 @section('content')
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">User Management</h4>
@@ -169,10 +169,6 @@
               <option value="tenant">Tenant</option>
               <option value="landlord">Landlord</option>
             </select>
-          </div>
-          <div class="mb-3">
-            <label>Password <small>(leave blank to keep current)</small></label>
-            <input type="password" name="password" class="form-control">
           </div>
         </div>
         <div class="modal-footer">

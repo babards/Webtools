@@ -130,6 +130,20 @@
         });
     </script>
     @endif
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Remove any text node that looks like a parent-placeholder artifact
+        Array.from(document.body.childNodes).forEach(function(node) {
+            if (
+                node.nodeType === Node.TEXT_NODE &&
+                node.textContent.trim().match(/^##parent-placeholder-[a-f0-9]+##$/)
+            ) {
+                node.parentNode.removeChild(node);
+            }
+        });
+    });
+    </script>
 </body>
 </html>
 

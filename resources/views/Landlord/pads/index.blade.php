@@ -1,45 +1,55 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <form method="GET" action="{{ route('landlord.pads.index') }}" class="flex-grow-1 me-3" style="max-width: 500px;">
-            <div class="input-group">
-                <input type="text" name="search" class="form-control" placeholder="Search pad..."
-                    value="{{ request('search') }}">
-                <button class="btn btn-primary" type="submit">Search</button>
+    <div class="container">
+        <div class="row align-items-end mb-3">
+            <div class="col">
+                <form method="GET" action="{{ route('landlord.pads.index') }}" class="mb-4 flex-grow-1 me-3">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control" placeholder="Search pad..." value="{{ request('search') }}">
+                                <button class="btn btn-primary" type="submit">Search</button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="location_filter" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Locations</option>
+                                @foreach($pads->pluck('padLocation')->map(function($loc) {
+                                    $parts = explode(',', $loc);
+                                    return isset($parts[2]) ? trim($parts[2]) : trim($loc);
+                                })->unique()->sort() as $city)
+                                    <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="price_filter" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Prices</option>
+                                <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below ₱1,000</option>
+                                <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 - ₱2,000</option>
+                                <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 - ₱3,000</option>
+                                <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above ₱3,000</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <a href="{{ route('landlord.pads.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
+                        </div>
+                    </div>
+                </form>
             </div>
-        </form>
-        <form method="GET" action="{{ route('landlord.pads.index') }}" class="d-flex gap-2 align-items-center flex-grow-1">
-            <select name="location_filter" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
-                <option value="">All Locations</option>
-                @foreach ($pads->pluck('padLocation')->unique() as $location)
-                    <option value="{{ $location }}" {{ request('location_filter') == $location ? 'selected' : '' }}>
-                        {{ $location }}
-                    </option>
-                @endforeach
-            </select>
-            <select name="price_filter" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
-                <option value="">All Prices</option>
-                <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below ₱1,000
-                </option>
-                <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 - ₱2,000
-                </option>
-                <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 - ₱3,000
-                </option>
-                <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above ₱3,000
-                </option>
-            </select>
-            <a href="{{ route('landlord.pads.index') }}" class="btn btn-outline-secondary">Reset Filters</a>
-        </form>
-        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">
-            Add New Pad
-        </a>
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">
+                    Add New Pad
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="row" id="pad-list">
         @foreach ($pads as $pad)
             <div class="col-md-3 mb-4" id="pad-card-{{ $pad->padID }}">
-                <div class="card h-100 shadow-sm">
+                <div class="card h-100 d-flex flex-column shadow-sm">
                     <a href="{{ route('landlord.pads.show', $pad->padID) }}" style="text-decoration: none; color: inherit;">
                         @if ($pad->padImage)
                             <img src="{{ asset('storage/' . $pad->padImage) }}" class="card-img-top"
@@ -55,25 +65,21 @@
                             <p class="card-text text-muted mb-1">Status: {{ ucfirst($pad->padStatus) }}</p>
                         </div>
                     </a>
-                    <div class="card-footer bg-white border-0">
-                        <div class="mb-2">
-                            <strong>Boarders:</strong> {{ $pad->number_of_boarders ?? 0 }}
-                        </div>
-                        <div class="d-flex gap-2 mt-2">
-                            <button class="btn btn-warning btn-sm editPadBtn" data-id="{{ $pad->padID }}"
-                                data-name="{{ $pad->padName }}" data-description="{{ $pad->padDescription }}"
-                                data-location="{{ $pad->padLocation }}" data-rent="{{ $pad->padRent }}"
-                                data-status="{{ $pad->padStatus }}" data-latitude="{{ $pad->latitude }}"
-                                data-longitude="{{ $pad->longitude }}" data-bs-toggle="modal" data-bs-target="#editPadModal"
-                                style="color:#000;">
-                                Edit
-                            </button>
-                            <button class="btn btn-danger btn-sm deletePadBtn" data-id="{{ $pad->padID }}"
-                                data-name="{{ $pad->padName }}" data-bs-toggle="modal" data-bs-target="#deletePadModal"
-                                style="color:#fff;">
-                                Delete
-                            </button>
-                        </div>
+                    <div class="card-footer bg-white border-0 d-flex align-items-center gap-2 mt-auto">
+                        <div class="flex-grow-1"><small><strong>Boarders:</strong> {{ $pad->number_of_boarders ?? 0 }}</small></div>
+                        <button class="btn btn-warning btn-sm editPadBtn" data-id="{{ $pad->padID }}"
+                            data-name="{{ $pad->padName }}" data-description="{{ $pad->padDescription }}"
+                            data-location="{{ $pad->padLocation }}" data-rent="{{ $pad->padRent }}"
+                            data-status="{{ $pad->padStatus }}" data-latitude="{{ $pad->latitude }}"
+                            data-longitude="{{ $pad->longitude }}" data-bs-toggle="modal" data-bs-target="#editPadModal"
+                            style="color:#000;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm deletePadBtn" data-id="{{ $pad->padID }}"
+                            data-name="{{ $pad->padName }}" data-bs-toggle="modal" data-bs-target="#deletePadModal"
+                            style="color:#fff;">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -81,7 +87,9 @@
     </div>
 
     @if ($pads->isEmpty())
-        <div class="text-center text-muted py-3">No pads found.</div>
+        <div class="col-12">
+            <div class="alert alert-info text-center">No pads found.</div>
+        </div>
     @endif
 
     <div class="mt-3">
@@ -101,7 +109,7 @@
                     <div class="modal-body">
                         <!-- Step 1: Map -->
                         <div id="mapStep">
-                            <div id="map" style="height: 600px;"></div>
+                            <div id="map" style="height: 400px;"></div>
                             <input type="hidden" name="latitude" id="latitude">
                             <input type="hidden" name="longitude" id="longitude">
                             <div class="mb-3">
@@ -151,9 +159,6 @@
         </div>
     </div>
 
-
-
-
     <!-- Edit Pad Modal -->
     <div class="modal fade" id="editPadModal" tabindex="-1" aria-labelledby="editPadModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -168,7 +173,7 @@
 
                         {{-- Step 1: Location --}}
                         <div id="mapStepEdit">
-                            <div id="editMap" style="height: 600px;"></div>
+                            <div id="editMap" style="height: 400px;"></div>
                             <input type="hidden" name="latitude" id="editLatitude">
                             <input type="hidden" name="longitude" id="editLongitude">
                             <div class="mb-3">
@@ -554,7 +559,6 @@
 
         });
     </script>
-
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
