@@ -2,45 +2,47 @@
 
 @section('content')
     <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <form method="GET" action="{{ route('landlord.pads.index') }}" class="flex-grow-1 me-3">
-                <div class="row g-2 align-items-center">
-                    <div class="col-md-5">
-                        <div class="input-group">
-                            <input type="text" name="search" class="form-control" placeholder="Search pad..." value="{{ request('search') }}">
-                            <button class="btn btn-primary" type="submit">Search</button>
+        <div class="row align-items-end mb-3">
+            <div class="col">
+                <form method="GET" action="{{ route('landlord.pads.index') }}" class="mb-4 flex-grow-1 me-3">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control" placeholder="Search pad..." value="{{ request('search') }}">
+                                <button class="btn btn-primary" type="submit">Search</button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="location_filter" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Locations</option>
+                                @foreach($pads->pluck('padLocation')->map(function($loc) {
+                                    $parts = explode(',', $loc);
+                                    return isset($parts[2]) ? trim($parts[2]) : trim($loc);
+                                })->unique()->sort() as $city)
+                                    <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="price_filter" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Prices</option>
+                                <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below ₱1,000</option>
+                                <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 - ₱2,000</option>
+                                <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 - ₱3,000</option>
+                                <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above ₱3,000</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <a href="{{ route('landlord.pads.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <select name="location_filter" class="form-select" onchange="this.form.submit()">
-                            <option value="">All Locations</option>
-                            @foreach($pads->pluck('padLocation')->map(function($loc) {
-                                $parts = explode(',', $loc);
-                                return isset($parts[2]) ? trim($parts[2]) : trim($loc);
-                            })->unique()->sort() as $city)
-                                <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>
-                                    {{ $city }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select name="price_filter" class="form-select" onchange="this.form.submit()">
-                            <option value="">All Prices</option>
-                            <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below ₱1,000</option>
-                            <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 - ₱2,000</option>
-                            <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 - ₱3,000</option>
-                            <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above ₱3,000</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1">
-                        <a href="{{ route('landlord.pads.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
-                    </div>
-                </div>
-            </form>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">
-                Add New Pad
-            </button>
+                </form>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">
+                    Add New Pad
+                </button>
+            </div>
         </div>
     </div>
 
@@ -85,7 +87,9 @@
     </div>
 
     @if ($pads->isEmpty())
-        <div class="text-center text-muted py-3">No pads found.</div>
+        <div class="col-12">
+            <div class="alert alert-info text-center">No pads found.</div>
+        </div>
     @endif
 
     <div class="mt-3">

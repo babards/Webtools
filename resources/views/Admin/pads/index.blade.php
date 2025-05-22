@@ -9,8 +9,8 @@
             </button>
         </div>
 
-        <form method="GET" action="{{ route('admin.pads.index') }}" class="mb-3">
-            <div class="row g-2 align-items-center">
+        <form method="GET" action="{{ route('admin.pads.index') }}" class="mb-4">
+            <div class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <div class="input-group">
                         <input type="text" name="search" class="form-control" placeholder="Search pads by name, location, landlord..." value="{{ request('search') }}">
@@ -24,9 +24,7 @@
                             $parts = explode(',', $loc);
                             return isset($parts[2]) ? trim($parts[2]) : trim($loc);
                         })->unique()->sort() as $city)
-                            <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>
-                                {{ $city }}
-                            </option>
+                            <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -111,8 +109,8 @@
                     </div>
                 </div>
             @empty
-                <div class="col">
-                    <div class="text-center text-muted py-3">No pads found.</div>
+                <div class="col-12">
+                    <div class="alert alert-info text-center">No pads found.</div>
                 </div>
             @endforelse
         </div>

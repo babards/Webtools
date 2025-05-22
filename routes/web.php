@@ -10,6 +10,7 @@ use App\Mail\TestEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PadController;
+use App\Models\Pad;
 
 Route::get('/verify-email/{token}', [EmailVerificationController::class,'verifyEmail'])
     ->name('verify.email');
@@ -26,7 +27,11 @@ Route::post('/2fa/resend', [AuthController::class, 'resend2FACode'])->name('2fa.
 
 
 // Public routes
-Route::get('/', [AuthController::class, 'showRegisterForm'])->name('register');
+Route::get('/', [App\Http\Controllers\GuestPadController::class, 'index'])->name('welcome');
+
+// Guest pad details and application
+Route::get('/pads/{pad}', [App\Http\Controllers\GuestPadController::class, 'show'])->name('guest.pads.show');
+Route::post('/pads/{padId}/apply', [App\Http\Controllers\GuestPadController::class, 'apply'])->name('guest.pads.apply');
 
 // Authentication routes
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');

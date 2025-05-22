@@ -4,8 +4,8 @@
 <div class="container">
     <h2>Available Pads</h2>
 
-    <form method="GET" action="{{ route('tenant.pads.index') }}" class="mb-3">
-        <div class="row g-3">
+    <form method="GET" action="{{ route('tenant.pads.index') }}" class="mb-4">
+        <div class="row g-3 align-items-end">
             <div class="col-md-3">
                 <div class="input-group">
                     <input type="text" name="search" class="form-control" placeholder="Search pads..." value="{{ request('search') }}">
@@ -25,8 +25,11 @@
             <div class="col-md-3">
                 <select name="location_filter" class="form-select" onchange="this.form.submit()">
                     <option value="">All Locations</option>
-                    @foreach($pads->pluck('padLocation')->unique() as $location)
-                        <option value="{{ $location }}" {{ request('location_filter') == $location ? 'selected' : '' }}>{{ $location }}</option>
+                    @foreach($pads->pluck('padLocation')->map(function($loc) {
+                        $parts = explode(',', $loc);
+                        return isset($parts[2]) ? trim($parts[2]) : trim($loc);
+                    })->unique()->sort() as $city)
+                        <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
                     @endforeach
                 </select>
             </div>
@@ -44,6 +47,12 @@
             </div>
         </div>
     </form>
+
+    @if($pads->isEmpty())
+        <div class="col-12">
+            <div class="alert alert-info text-center">No pads found.</div>
+        </div>
+    @endif
 
     <div class="row">
         @foreach($pads as $pad)
