@@ -40,6 +40,8 @@
                 <a href="{{ route('landlord.applications.all') }}" class="btn btn-outline-secondary w-100">Reset Filters</a>
             </div>
         </form>
+        <!-- Export Button -->
+        <a href="{{ route('landlord.boarders.export', request()->all()) }}" class="btn btn-success mb-3">Export Boarders</a>
         @if($boarders->count())
             <table class="table table-bordered">
                 <thead>

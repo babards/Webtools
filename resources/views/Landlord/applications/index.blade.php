@@ -38,6 +38,8 @@
             <a href="{{ route('landlord.applications.all') }}" class="btn btn-outline-secondary w-100">Reset Filters</a>
         </div>
     </form>
+    <!-- Export Button -->
+    <a href="{{ route('landlord.applications.export', request()->all()) }}" class="btn btn-success mb-3">Export Applications</a>
     @if($applications->count())
         <table class="table table-bordered">
             <thead>
@@ -88,7 +90,9 @@
                 @endforeach
             </tbody>
         </table>
-        {{ $applications->links() }}
+        <div class="mt-3">
+            {{ $applications->links('pagination::bootstrap-5') }}
+        </div>
     @else
         <p>No applications found.</p>
     @endif

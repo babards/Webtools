@@ -37,17 +37,27 @@
                         <div class="col-7">
                             <span class="badge 
                                 @if($pad->padStatus == 'available') bg-success
+                                @elseif($pad->number_of_boarders >= $pad->vacancy) bg-danger
                                 @elseif($pad->padStatus == 'occupied') bg-danger
                                 @else bg-warning text-dark
                                 @endif
                             ">
-                                {{ ucfirst($pad->padStatus) }}
+                                @if($pad->number_of_boarders >= $pad->vacancy)
+                                    Fully Occupied
+                                @else
+                                    {{ ucfirst($pad->padStatus) }}
+                                @endif
                             </span>
                         </div>
                     </div>
                     <div class="row mb-2">
-                        <div class="col-5 text-muted fw-bold">Number of Boarders:</div>
-                        <div class="col-7">{{ $pad->number_of_boarders ?? 0 }}</div>
+                        @if ($pad->number_of_boarders >= $pad->vacancy)
+                            <div class="col-5 text-muted fw-bold">Vacant:</div>
+                            <div class="col-7">Fully Occupied</div>
+                        @else
+                            <div class="col-5 text-muted fw-bold">Vacant:</div>
+                            <div class="col-7">{{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</div>
+                        @endif
                     </div>
                     <div class="row mb-2">
                         <div class="col-5 text-muted fw-bold">Applications:</div>
@@ -91,12 +101,9 @@
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#applicationsModal">
                     View Applications
                 </button>
-                
-                </a>
-                <a href="{{ route('landlord.pads.boarders', $pad->padID) }}" class="btn btn-primary">
+                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#boardersModal">
                     View Boarders
-                </a>
-
+                </button>
                 <a href="{{ route('landlord.pads.index') }}" class="btn btn-outline-secondary">
                     Back to List
                 </a>
@@ -172,6 +179,73 @@
                     </div>
                 @else
                     <p>No applications found for this pad.</p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Boarders Modal -->
+<div class="modal fade" id="boardersModal" tabindex="-1" aria-labelledby="boardersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="boardersModalLabel">Boarders for {{ $pad->padName }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @php
+                    $boarders = isset($boarders) ? $boarders : (\App\Models\PadBoarder::with('tenant')->where('pad_id', $pad->padID)->get());
+                @endphp
+                @if($boarders->count())
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Tenant</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($boarders as $boarder)
+                                    @php
+                                        $start = \Carbon\Carbon::parse($boarder->created_at);
+                                        $now = \Carbon\Carbon::now();
+                                        $diff = $start->diff($now);
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $boarder->tenant->first_name ?? 'N/A' }} {{ $boarder->tenant->last_name ?? '' }}</td>
+                                        <td>{{ $diff->m }} months and {{ $diff->d }} days</td>
+                                        <td>
+                                            <span class="badge 
+                                                @if($boarder->status == 'active') bg-success
+                                                @elseif($boarder->status == 'left') bg-danger
+                                                @elseif($boarder->status == 'kicked') bg-warning text-dark
+                                                @else bg-secondary
+                                                @endif
+                                            ">
+                                                {{ ucfirst($boarder->status) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($boarder->status == 'active')
+                                                <form action="{{ route('landlord.boarders.kicked', $boarder->id) }}" method="POST" style="display:inline;">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-danger btn-sm">Kick Out</button>
+                                                </form>
+                                            @else
+                                                <span class="text-muted">No action required</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <p>No approved boarders for this pad yet.</p>
                 @endif
             </div>
         </div>
@@ -373,7 +447,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 }, 300);
             });
         });
-
         // Navigation for edit modal
         nextButtonEdit.addEventListener('click', function () {
             const lat = document.getElementById('editLatitude').value;

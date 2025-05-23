@@ -2,7 +2,14 @@
 
 @section('content')
     <div class="container">
-        <div class="row align-items-end mb-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Pad Management</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">
+            Add New Pad
+        </button>
+    </div>
+    <div class="row align-items-end mb-3">
             <div class="col">
                 <form method="GET" action="{{ route('landlord.pads.index') }}" class="mb-4 flex-grow-1 me-3">
                     <div class="row g-3 align-items-end">
@@ -38,13 +45,6 @@
                     </div>
                 </form>
             </div>
-            <div class="col-auto">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">
-                    Add New Pad
-                </button>
-            </div>
-        </div>
-    </div>
 
     <div class="row" id="pad-list">
         @foreach ($pads as $pad)
@@ -58,24 +58,25 @@
                             <img src="https://via.placeholder.com/300x160?text=No+Image" class="card-img-top"
                                 style="height: 160px; object-fit: cover;">
                         @endif
-                        <div class="card-body">
+                        <div class="card-body flex-grow-1">
                             <h5 class="card-title">{{ $pad->padName }}</h5>
                             <p class="card-text">{{ $pad->padLocation }}</p>
                             <p class="card-text text-muted mb-1">₱{{ number_format($pad->padRent, 2) }}</p>
-                            <p class="card-text text-muted mb-1">Status: {{ ucfirst($pad->padStatus) }}</p>
-                            @if ($pad->number_of_boarders >= $pad->vacancy)
-                                <p class="card-text text-muted mb-1"><strong>Vacant:</strong>
-                                    {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }} (Full)</p>
-                            @else
-                                <p class="card-text text-muted mb-1"><strong>Vacant:</strong>
-                                    {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
-                            @endif
-                            <p class="card-text text-muted mb-1"><strong>Boarders:</strong> {{ $pad->number_of_boarders ?? 0 }}
+                            <p class="card-text text-muted mb-1">Status: 
+                                @if ($pad->number_of_boarders >= $pad->vacancy)
+                                    Fully Occupied
+                                @else
+                                    {{ ucfirst($pad->padStatus) }}
+                                @endif
                             </p>
+                            @if ($pad->number_of_boarders >= $pad->vacancy)
+                                <p class="card-text text-muted mb-1"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }} (Fully Occupied)</p>
+                            @else
+                                <p class="card-text text-muted mb-1"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
+                            @endif
                         </div>
                     </a>
-                    <div class="card-footer bg-white border-0 d-flex align-items-center gap-2 mt-auto">
-                        <div class="flex-grow-1"><small><strong>Boarders:</strong> {{ $pad->number_of_boarders ?? 0 }}</small></div>
+                    <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mt-auto">
                         <button class="btn btn-warning btn-sm editPadBtn" data-id="{{ $pad->padID }}"
                             data-name="{{ $pad->padName }}" data-description="{{ $pad->padDescription }}"
                             data-location="{{ $pad->padLocation }}" data-rent="{{ $pad->padRent }}"
@@ -96,9 +97,9 @@
     </div>
 
     @if ($pads->isEmpty())
-        <div class="col-12">
-            <div class="alert alert-info text-center">No pads found.</div>
-        </div>
+    <div class="col-12">
+        <div class="alert alert-info text-center">No pads found.</div>
+    </div>
     @endif
 
     <div class="mt-3">
@@ -150,7 +151,6 @@
                                 <select name="padStatus" class="form-select" required>
                                     <option value="available">Available</option>
                                     <option value="occupied">Occupied</option>
-                                    <option value="maintenance">Maintenance</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -219,7 +219,6 @@
                                 <select name="padStatus" id="editPadStatus" class="form-select" required>
                                     <option value="available">Available</option>
                                     <option value="occupied">Occupied</option>
-                                    <option value="maintenance">Maintenance</option>
                                 </select>
                             </div>
                             <div class="mb-3">

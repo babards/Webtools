@@ -11,6 +11,13 @@ use App\Models\PadApplication;
 use App\Models\PadBoarder;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\LogsActivity;
+use App\Mail\ApplicationApprovedMail;
+use App\Mail\ApplicationRejectedMail;
+use Illuminate\Support\Facades\Mail;
+use App\Exports\LandlordApplicationsExport;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Mail\BoarderKickedMail;
+use App\Exports\LandlordBoardersExport;
 
 class PadController extends Controller
 {
@@ -393,7 +400,7 @@ class PadController extends Controller
             }
         }
 
-        $pads = $query->paginate(8);
+        $pads = $query->paginate(9);
         return view('tenant.pads.index', compact('pads'));
     }
 
@@ -511,10 +518,10 @@ class PadController extends Controller
                 'status' => 'active',
             ]);
 
-
-            //check if the vacancy is full and if full update the status of the pad into occupied, not full into available
-            // Optionally, you might want to change pad status if it reaches capacity,
-            // or reject other pending applications for this pad. For now, just approve.
+            // Send approval email
+            if ($tenant && $tenant->email) {
+                Mail::to($tenant->email)->send(new ApplicationApprovedMail($application));
+            }
 
             $tenantInfo = $tenant ? $tenant->first_name . ' ' . $tenant->last_name . ' (' . $tenant->email . ')' : 'Unknown Tenant';
             $this->logActivity('approve_application', "Approved application for pad: {$pad->padName} | Tenant: {$tenantInfo}");
@@ -539,6 +546,11 @@ class PadController extends Controller
         if ($application->status === 'pending') {
             $application->status = 'rejected';
             $application->save();
+
+            // Send rejection email
+            if ($tenant && $tenant->email) {
+                Mail::to($tenant->email)->send(new ApplicationRejectedMail($application));
+            }
 
             $tenantInfo = $tenant ? $tenant->first_name . ' ' . $tenant->last_name . ' (' . $tenant->email . ')' : 'Unknown Tenant';
             $this->logActivity('reject_application', "Rejected application for pad: {$pad->padName} | Tenant: {$tenantInfo}");
@@ -587,7 +599,7 @@ class PadController extends Controller
             $applications = $applications->where('status', $request->input('status_filter'));
         }
 
-        $applications = $applications->orderBy('application_date', 'desc')->paginate(15);
+        $applications = $applications->orderBy('application_date', 'desc')->paginate(10);
 
         return view('landlord.applications.index', compact('applications'));
     }
@@ -651,8 +663,9 @@ class PadController extends Controller
 
     public function landlordKickBoarders(Request $request, $boardersId)
     {
-        $boarders = PadBoarder::with('pad')->findOrFail($boardersId);
+        $boarders = PadBoarder::with(['pad', 'tenant'])->findOrFail($boardersId);
         $pad = $boarders->pad;
+        $tenant = $boarders->tenant;
 
         // Ensure the authenticated user is the landlord of the pad
         if ($pad->userID !== Auth::id()) {
@@ -663,9 +676,25 @@ class PadController extends Controller
             $boarders->status = 'kicked';
             $boarders->save();
 
-            // Increment number of boarders
+            // Update the latest approved application for this boarder to 'kicked'
+            $application = \App\Models\PadApplication::where('pad_id', $pad->padID)
+                ->where('user_id', $boarders->user_id)
+                ->where('status', 'approved')
+                ->latest('application_date')
+                ->first();
+            if ($application) {
+                $application->status = 'kicked';
+                $application->save();
+            }
+
+            // Decrement number of boarders
             $pad->decrement('number_of_boarders');
             $this->checkAndUpdatePadStatus($pad->padID);
+
+            // Send kicked email
+            if ($tenant && $tenant->email) {
+                Mail::to($tenant->email)->send(new BoarderKickedMail($boarders));
+            }
 
             $this->logActivity('kicked_boarder', "Kicked boarder for pad: {$pad->padName}");
 
@@ -701,6 +730,79 @@ class PadController extends Controller
         }
 
         $pad->save();
+    }
+
+    public function landlordExportApplications(Request $request, $padId = null)
+    {
+        $query = PadApplication::with(['pad', 'tenant']);
+        if ($padId) {
+            $pad = Pad::where('padID', $padId)->where('userID', Auth::id())->firstOrFail();
+            $query = $query->where('pad_id', $pad->padID);
+        } else {
+            $query = $query->whereHas('pad', function ($q) {
+                $q->where('userID', auth()->id());
+            });
+        }
+        // Apply filters
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query = $query->where(function ($q) use ($search) {
+                $q->whereHas('pad', function ($q2) use ($search) {
+                    $q2->where('padName', 'like', "%{$search}%");
+                })
+                ->orWhereHas('tenant', function ($q2) use ($search) {
+                    $q2->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%");
+                })
+                ->orWhere('message', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('pad_filter')) {
+            $query = $query->whereHas('pad', function ($q) use ($request) {
+                $q->where('padName', $request->input('pad_filter'));
+            });
+        }
+        if ($request->filled('tenant_filter')) {
+            $query = $query->where('user_id', $request->input('tenant_filter'));
+        }
+        if ($request->filled('status_filter')) {
+            $query = $query->where('status', $request->input('status_filter'));
+        }
+        $applications = $query->orderBy('application_date', 'desc')->get();
+        return Excel::download(new LandlordApplicationsExport($applications), 'applications.xlsx');
+    }
+
+    public function landlordExportBoarders(Request $request)
+    {
+        $query = PadBoarder::with(['pad', 'tenant'])->whereHas('pad', function ($q) {
+            $q->where('userID', auth()->id());
+        });
+        // Apply filters
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query = $query->where(function ($q) use ($search) {
+                $q->whereHas('pad', function ($q2) use ($search) {
+                    $q2->where('padName', 'like', "%{$search}%");
+                })
+                ->orWhereHas('tenant', function ($q2) use ($search) {
+                    $q2->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%");
+                });
+            });
+        }
+        if ($request->filled('pad_filter')) {
+            $query = $query->whereHas('pad', function ($q) use ($request) {
+                $q->where('padName', $request->input('pad_filter'));
+            });
+        }
+        if ($request->filled('tenant_filter')) {
+            $query = $query->where('user_id', $request->input('tenant_filter'));
+        }
+        if ($request->filled('status_filter')) {
+            $query = $query->where('status', $request->input('status_filter'));
+        }
+        $boarders = $query->orderBy('created_at', 'desc')->get();
+        return Excel::download(new LandlordBoardersExport($boarders), 'boarders.xlsx');
     }
 
 }

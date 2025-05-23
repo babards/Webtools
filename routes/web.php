@@ -10,7 +10,7 @@ use App\Mail\TestEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PadController;
-use App\Models\Pad;
+use App\Http\Controllers\GuestPadController;
 
 Route::get('/verify-email/{token}', [EmailVerificationController::class,'verifyEmail'])
     ->name('verify.email');
@@ -60,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Logs
         Route::get('/logs', [App\Http\Controllers\Admin\LogController::class, 'index'])->name('logs.index');
+        Route::get('/logs/export', [App\Http\Controllers\Admin\LogController::class, 'export'])->name('logs.export');
     });
 
     // Landlord routes
@@ -80,6 +81,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pads/{padId}/boarders', [PadController::class, 'landlordViewBoarders'])->name('pads.boarders');
         Route::get('/boarders', [PadController::class, 'landlordAllBoarders'])->name('boarders.all');
         Route::post('/boarders/{boardersId}/kicked', [PadController::class, 'landlordKickBoarders'])->name('boarders.kicked');
+        Route::get('/applications/export', [PadController::class, 'landlordExportApplications'])->name('applications.export');
+        Route::get('/pads/{padId}/applications/export', [PadController::class, 'landlordExportApplications'])->name('pads.applications.export');
+        Route::get('/boarders/export', [PadController::class, 'landlordExportBoarders'])->name('boarders.export');
     });
 
     // Tenant routes

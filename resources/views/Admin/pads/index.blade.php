@@ -4,9 +4,12 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2>All Pads (Admin View)</h2>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">
-                Create New Pad
-            </button>
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.pads.index') }}" class="btn btn-outline-secondary">Reset Filters</a>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">
+                    Create New Pad
+                </button>
+            </div>
         </div>
 
         <form method="GET" action="{{ route('admin.pads.index') }}" class="mb-4">
@@ -18,8 +21,18 @@
                     </div>
                 </div>
                 <div class="col-md-3">
+                    <select name="landlord_filter" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Landlords</option>
+                        @foreach($landlords as $landlord)
+                            <option value="{{ $landlord->id }}" {{ request('landlord_filter') == $landlord->id ? 'selected' : '' }}>
+                                {{ $landlord->first_name }} {{ $landlord->last_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <select name="location_filter" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Cities</option>
+                        <option value="">All Locations</option>
                         @foreach($pads->pluck('padLocation')->map(function($loc) {
                             $parts = explode(',', $loc);
                             return isset($parts[2]) ? trim($parts[2]) : trim($loc);
@@ -36,19 +49,6 @@
                         <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 - ₱3,000</option>
                         <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above ₱3,000</option>
                     </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="landlord_filter" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Landlords</option>
-                        @foreach($landlords as $landlord)
-                            <option value="{{ $landlord->id }}" {{ request('landlord_filter')==$landlord->id ? 'selected' : '' }}>
-                                {{ $landlord->first_name ?? ''}} {{ $landlord->last_name ?? '' }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-1">
-                    <a href="{{ route('admin.pads.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
                 </div>
             </div>
         </form>
@@ -77,38 +77,40 @@
                                 <img src="https://via.placeholder.com/300x160?text=No+Image" class="card-img-top"
                                     style="height: 160px; object-fit: cover;" alt="No Image">
                             @endif
-                            <div class="card-body">
+                            <div class="card-body pb-5">
                                 <h5 class="card-title">{{ $pad->padName }}</h5>
                                 <p class="card-text">{{ Str::limit($pad->padDescription, 50) }}</p>
                                 <p class="card-text"><strong>Location:</strong> {{ $pad->padLocation }}</p>
                                 <p class="card-text text-muted mb-1">₱{{ number_format($pad->padRent, 2) }}</p>
-                                <p class="card-text text-muted mb-1">Status: {{ ucfirst($pad->padStatus) }}</p>
+                                <p class="card-text text-muted mb-1">Status: 
+                                    @if ($pad->number_of_boarders >= $pad->vacancy)
+                                        Fully Occupied
+                                    @else
+                                        {{ ucfirst($pad->padStatus) }}
+                                    @endif
+                                </p>
                                 <p class="card-text text-muted mb-1">Landlord: {{ $pad->landlord->first_name ?? 'N/A' }}
                                     {{ $pad->landlord->last_name ?? '' }}
                                 </p>
 
                                 @if ($pad->number_of_boarders >= $pad->vacancy)
-                                    <p class="card-text text-muted mb-1"><strong>Vacant:</strong>
-                                    Full</p>
+                                    <p class="card-text text-muted mb-1"><strong>Vacant:</strong> Fully Occupied</p>
                                 @else
-                                    <p class="card-text text-muted mb-1"><strong>Vacant:</strong>
-                                    {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
+                                    <p class="card-text text-muted mb-1"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
                                 @endif
-                                <p class="card-text text-muted mb-1"><strong>Boarders:</strong>
-                                    {{ $pad->number_of_boarders ?? 0 }}</p>
                             </div>
                         </a>
                         {{-- data-image-url="{{ $pad->padImage ? asset('storage/' . $pad->padImage) : '' }}"> --}}
-                        <div class="card-footer bg-white border-0 d-flex gap-2 mt-auto">
-                            <button type="button" class="btn btn-warning btn-sm editPadBtn" data-bs-toggle="modal"
+                        <div class="card-footer bg-white border-0 d-flex align-items-end gap-2 justify-content-end position-absolute w-100" style="bottom: 0; right: 0; min-height: 40px; background: transparent;">
+                            <button type="button" class="btn btn-warning btn-sm editPadBtn p-1" data-bs-toggle="modal"
                                 data-bs-target="#editPadModal" data-id="{{ $pad->padID }}" data-name="{{ $pad->padName }}"
                                 data-description="{{ $pad->padDescription }}" data-location="{{ $pad->padLocation }}"
                                 data-rent="{{ $pad->padRent }}" data-status="{{ $pad->padStatus }}"
                                 data-latitude="{{ $pad->latitude }}" data-longitude="{{ $pad->longitude }}" data-vacancy="{{ $pad->vacancy }}"
-                                data-landlord-id="{{ $pad->userID }}">
+                                data-landlord-id="{{ $pad->userID }}" style="color:#000;">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-danger btn-sm deletePadBtn" data-id="{{ $pad->padID }}"
+                            <button class="btn btn-danger btn-sm deletePadBtn p-1" data-id="{{ $pad->padID }}"
                                 data-name="{{ $pad->padName }}" data-bs-toggle="modal" data-bs-target="#deletePadModal"
                                 style="color:#fff;">
                                 <i class="fas fa-trash"></i>
@@ -175,7 +177,6 @@
                                 <select name="padStatus" class="form-select" required>
                                     <option value="available">Available</option>
                                     <option value="occupied">Occupied</option>
-                                    <option value="maintenance">Maintenance</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -262,7 +263,6 @@
                                 <select name="padStatus" id="editPadStatus" class="form-select" required>
                                     <option value="available">Available</option>
                                     <option value="occupied">Occupied</option>
-                                    <option value="maintenance">Maintenance</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -536,7 +536,7 @@
                     document.getElementById('editPadLocation').value = this.dataset.location || '';
                     document.getElementById('editPadRent').value = this.dataset.rent || '';
                     document.getElementById('editPadVacancy').value = this.dataset.vacancy || '';
-                    document.getElementById('editPadStatus').value = this.dataset.status || '';
+                    document.getElementById('editPadStatus').value = (this.dataset.status || '').toLowerCase();
                     document.getElementById('editLatitude').value = this.dataset.latitude || '';
                     document.getElementById('editLongitude').value = this.dataset.longitude || '';
                     document.getElementById('editPadLandlord').value = this.dataset.landlordId || '';
@@ -640,40 +640,6 @@
                     }
                 });
             });
-
-        // Re-show modal on validation errors
-        // @if ($errors->any())
-            //     <script>
-            //         document.addEventListener('DOMContentLoaded', function () {
-            //             @if (old('form_type') === 'create')
-                //                 // Show Create Modal
-                //                 var createModal = new bootstrap.Modal(document.getElementById('createPadModal'));
-                //                 createModal.show();
-            //             @elseif (old('form_type') === 'edit' && old('padID_for_edit'))
-                //                 // Show Edit Modal
-                //                 var editModalEl = document.getElementById('editPadModal');
-                //                 var editModal = new bootstrap.Modal(editModalEl);
-                //                 var padID = @json(old('padID_for_edit')); // safely outputs string or null
-
-                //                 // Set form action dynamically
-                //                 editModalEl.querySelector('#editPadForm').action = "{{ url('admin/pads') }}/" + padID;
-
-                //                 // Set form field values
-                //                 document.getElementById('editPadName').value = @json(old('padName', ''));
-                //                 document.getElementById('editPadDescription').value = @json(old('padDescription', ''));
-                //                 document.getElementById('editPadLocation').value = @json(old('padLocation', ''));
-                //                 document.getElementById('editPadRent').value = @json(old('padRent', ''));
-                //                 document.getElementById('editPadStatus').value = @json(old('padStatus', 'available'));
-                //                 document.getElementById('editPadLandlord').value = @json(old('userID', ''));
-
-                //                 // File inputs cannot be restored for security reasons
-
-                //                 editModal.show();
-            //             @endif
-            //         });
-            //     </script>
-        // @endif
-
 
     });
 

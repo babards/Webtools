@@ -39,27 +39,27 @@
                         <table class="table table-hover mb-0 align-middle table-sm">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="py-2">First Name</th>
-                                    <th class="py-2">Last Name</th>
-                                    <th class="py-2">Email</th>
-                                    <th class="py-2">Role</th>
-                                    <th class="py-2">Created At</th>
-                                    <th class="py-2">Update At</th>
-                                    <th class="py-2">Action</th>
+                                    <th class="py-1">First Name</th>
+                                    <th class="py-1">Last Name</th>
+                                    <th class="py-1">Email</th>
+                                    <th class="py-1">Role</th>
+                                    <th class="py-1">Created At</th>
+                                    <th class="py-1">Update At</th>
+                                    <th class="py-1">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($users as $user)
                                     <tr>
-                                        <td class="py-2">{{ $user->first_name }}</td>
-                                        <td class="py-2">{{ $user->last_name }}</td>
-                                        <td class="py-2">{{ $user->email }}</td>
-                                        <td class="py-2">
+                                        <td class="py-1">{{ $user->first_name }}</td>
+                                        <td class="py-1">{{ $user->last_name }}</td>
+                                        <td class="py-1">{{ $user->email }}</td>
+                                        <td class="py-1">
                                             <span class="badge bg-secondary">{{ ucfirst($user->role) }}</span>
                                         </td>
-                                        <td class="py-2">{{ $user->created_at->format('Y-m-d H:i') }}</td>
-                                        <td class="py-2">{{ $user->updated_at->format('Y-m-d H:i') }}</td>  
-                                        <td class="py-2">
+                                        <td class="py-1">{{ $user->created_at->format('Y-m-d H:i') }}</td>
+                                        <td class="py-1">{{ $user->updated_at->format('Y-m-d H:i') }}</td>  
+                                        <td class="py-1">
                                             <button class="btn btn-sm btn-warning editUserBtn"
                                                 data-id="{{ $user->id }}"
                                                 data-first_name="{{ $user->first_name }}"

@@ -4,6 +4,7 @@
 <div class="container">
     <h2>Applications for {{ $pad->padName }}</h2>
     @if($applications->count())
+        <a href="{{ route('landlord.pads.applications.export', ['padId' => $pad->padID] + request()->all()) }}" class="btn btn-success mb-3">Export Applications</a>
         <table class="table table-bordered">
             <thead>
                 <tr>

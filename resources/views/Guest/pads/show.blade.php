@@ -49,11 +49,16 @@
                                     <div class="col-7">
                                         <span class="badge 
                                             @if($pad->padStatus == 'available') bg-success
+                                            @elseif($pad->number_of_boarders >= $pad->vacancy) bg-danger
                                             @elseif($pad->padStatus == 'occupied') bg-danger
                                             @else bg-warning text-dark
                                             @endif
                                         ">
-                                            {{ ucfirst($pad->padStatus) }}
+                                            @if($pad->number_of_boarders >= $pad->vacancy)
+                                                Fully Occupied
+                                            @else
+                                                {{ ucfirst($pad->padStatus) }}
+                                            @endif
                                         </span>
                                     </div>
                                 </div>
@@ -64,8 +69,13 @@
                                     </div>
                                 </div>
                                 <div class="row mb-2">
-                                    <div class="col-5 text-muted fw-bold">Number of Boarders:</div>
-                                    <div class="col-7">{{ $pad->number_of_boarders ?? 0 }}</div>
+                                    @if ($pad->number_of_boarders >= $pad->vacancy)
+                                        <div class="col-5 text-muted fw-bold">Vacant:</div>
+                                        <div class="col-7">Fully Occupied</div>
+                                    @else
+                                        <div class="col-5 text-muted fw-bold">Vacant:</div>
+                                        <div class="col-7">{{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</div>
+                                    @endif
                                 </div>
                                 <div class="row mb-2">
                                     <div class="col-5 text-muted fw-bold">Created At:</div>

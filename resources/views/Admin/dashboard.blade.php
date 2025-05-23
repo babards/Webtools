@@ -64,8 +64,6 @@
                 </div>
             </div>
         </div>
-
-        
     
     <div class="mt-4" id="map" style="height: 600px;"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"

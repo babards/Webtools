@@ -31,17 +31,28 @@
                         <div class="col-7">
                             <span class="badge 
                                 @if($pad->padStatus == 'available') bg-success
+                                @elseif($pad->number_of_boarders >= $pad->vacancy) bg-danger
                                 @elseif($pad->padStatus == 'occupied') bg-danger
                                 @else bg-warning text-dark
                                 @endif
                             ">
-                                {{ ucfirst($pad->padStatus) }}
+                                @if($pad->number_of_boarders >= $pad->vacancy)
+                                    Fully Occupied
+                                @else
+                                    {{ ucfirst($pad->padStatus) }}
+                                @endif
                             </span>
                         </div>
                     </div>
                     <div class="row mb-2">
-                        <div class="col-5 text-muted fw-bold">Number of Boarders:</div>
-                        <div class="col-7">{{ $pad->number_of_boarders ?? 0 }}</div>
+                        <div class="col-5 text-muted fw-bold">Vacant:</div>
+                        <div class="col-7">
+                            @if($pad->number_of_boarders >= $pad->vacancy)
+                                Fully Occupied
+                            @else
+                                {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}
+                            @endif
+                        </div>
                     </div>
                     <div class="row mb-2">
                         <div class="col-5 text-muted fw-bold">Applications:</div>
@@ -69,8 +80,9 @@
                         data-name="{{ $pad->padName }}" data-description="{{ $pad->padDescription }}"
                         data-location="{{ $pad->padLocation }}" data-rent="{{ $pad->padRent }}"
                         data-status="{{ $pad->padStatus }}" data-latitude="{{ $pad->latitude }}"
-                        data-longitude="{{ $pad->longitude }}" data-landlord-id="{{ $pad->userID }}"
-                        data-bs-toggle="modal" data-bs-target="#editPadModal" style="color:#000;">
+                        data-longitude="{{ $pad->longitude }}" data-vacancy="{{ $pad->vacancy }}"
+                        data-bs-toggle="modal" data-bs-target="#editPadModal"
+                        style="color:#000;">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button class="btn btn-danger btn-sm deletePadBtn" data-id="{{ $pad->padID }}"
@@ -172,43 +184,91 @@
     </div>
 </div>
 
-<!-- Delete Pad Modal -->
-<div class="modal fade" id="deletePadModal" tabindex="-1" aria-labelledby="deletePadModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <form id="deletePadForm" method="POST" action="">
-      @csrf
-      @method('DELETE')
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="deletePadModalLabel">Delete Pad</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          Are you sure you want to delete <span id="deletePadName"></span>?
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger">Delete</button>
-        </div>
-      </div>
-    </form>
-  </div>
+<!-- Edit Pad Modal -->
+<div class="modal fade" id="editPadModal" tabindex="-1" aria-labelledby="editPadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form method="POST" id="editPadForm" enctype="multipart/form-data" action="{{ route('admin.pads.update', $pad->padID) }}">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="padID" value="{{ $pad->padID }}">
+            <input type="hidden" name="userID" value="{{ $pad->userID }}">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPadModalLabel">Edit Pad</h5>
+                </div>
+                <div class="modal-body">
+                    <div id="mapStepEdit">
+                        <div id="editMap" style="height: 400px;"></div>
+                        <input type="hidden" name="latitude" id="editLatitude" value="{{ $pad->latitude }}">
+                        <input type="hidden" name="longitude" id="editLongitude" value="{{ $pad->longitude }}">
+                        <div class="mb-3">
+                            <label>Location</label>
+                            <input type="text" name="padLocation" id="editPadLocation" class="form-control" value="{{ $pad->padLocation }}" required>
+                        </div>
+                    </div>
+                    <div id="formStepEdit" style="display: none;">
+                        <div class="mb-3">
+                            <label>Name</label>
+                            <input type="text" name="padName" class="form-control" value="{{ $pad->padName }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Description</label>
+                            <textarea name="padDescription" class="form-control">{{ $pad->padDescription }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label>Rent</label>
+                            <input type="number" name="padRent" class="form-control" value="{{ $pad->padRent }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Vacancy</label>
+                            <input type="number" name="vacancy" class="form-control" value="{{ $pad->vacancy }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Status</label>
+                            <select name="padStatus" class="form-select" required>
+                                <option value="available" {{ $pad->padStatus == 'available' ? 'selected' : '' }}>Available</option>
+                                <option value="occupied" {{ $pad->padStatus == 'occupied' ? 'selected' : '' }}>Occupied</option>
+                                <option value="maintenance" {{ $pad->padStatus == 'maintenance' ? 'selected' : '' }}>Maintenance</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Image</label>
+                            <input type="file" name="padImage" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="nextButtonEdit">Next</button>
+                    <button type="submit" class="btn btn-primary" id="submitButtonEdit" style="display: none;">Update</button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    var lat = {{ $pad->latitude ?? 0 }};
-    var lng = {{ $pad->longitude ?? 0 }};
-    var map = L.map('staticMap').setView([lat, lng], 16);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-    L.marker([lat, lng]).addTo(map)
-        .bindPopup("{{ $pad->padName }}");
-});
-</script>
+<!-- Delete Pad Modal -->
+<div class="modal fade" id="deletePadModal" tabindex="-1" aria-labelledby="deletePadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="{{ route('admin.pads.destroy', $pad->padID) }}" id="deletePadForm">
+            @csrf
+            @method('DELETE')
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deletePadModalLabel">Delete Pad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong>{{ $pad->padName }}</strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -226,119 +286,63 @@ document.addEventListener("DOMContentLoaded", function () {
         const cancelButtonEdit = document.getElementById('cancelButtonEdit');
         const editPadModal = document.getElementById('editPadModal');
 
-        // Helper: Reverse geocode
-        function reverseGeocode(lat, lng, inputId) {
-            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.display_name) {
-                        document.getElementById(inputId).value = data.display_name;
-                    } else {
-                        document.getElementById(inputId).value = '';
-                        alert('Unable to fetch address. Please enter manually.');
-                    }
-                })
-                .catch(() => {
-                    document.getElementById(inputId).value = '';
-                    alert('Failed to fetch address. Please enter manually.');
-                });
-        }
+            // Edit Modal Map Logic
+            let editMap, editMarker;
+            const editPadModal = document.getElementById('editPadModal');
+            const editMapContainer = document.getElementById('editMap');
+            const editLatitudeInput = document.getElementById('editLatitude');
+            const editLongitudeInput = document.getElementById('editLongitude');
+            const editPadLocationInput = document.getElementById('editPadLocation');
 
-        // Show modal and pre-fill data
-        document.querySelectorAll('.editPadBtn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const id = btn.getAttribute('data-id');
-                document.getElementById('editPadForm').action = `/admin/pads/${id}`;
-                document.getElementById('editPadId').value = id;
-                document.getElementById('editPadName').value = btn.getAttribute('data-name');
-                document.getElementById('editPadDescription').value = btn.getAttribute('data-description');
-                document.getElementById('editPadRent').value = btn.getAttribute('data-rent');
-                document.getElementById('editPadStatus').value = btn.getAttribute('data-status');
-                document.getElementById('editPadLocation').value = btn.getAttribute('data-location');
-                document.getElementById('editLatitude').value = btn.getAttribute('data-latitude');
-                document.getElementById('editLongitude').value = btn.getAttribute('data-longitude');
-                document.getElementById('editPadLandlord').value = btn.getAttribute('data-landlord-id');
+            editPadModal.addEventListener('shown.bs.modal', function () {
+                if (!editMap) {
+                    editMap = L.map('editMap').setView([lat, lng], 16);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(editMap);
 
-                // Step logic
-                mapStepEdit.style.display = 'block';
-                formStepEdit.style.display = 'none';
-                nextButtonEdit.style.display = 'inline-block';
-                backButtonEdit.style.display = 'none';
-                submitButtonEdit.style.display = 'none';
+                    editMarker = L.marker([lat, lng]).addTo(editMap);
 
-                // Map logic
-                setTimeout(function() {
-                    if (!editMap) {
-                        editMap = L.map('editMap').setView([
-                            btn.getAttribute('data-latitude') || 7.9092,
-                            btn.getAttribute('data-longitude') || 125.0949
-                        ], 16);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '© OpenStreetMap contributors'
-                        }).addTo(editMap);
-                        L.Control.geocoder({ defaultMarkGeocode: false })
-                            .on('markgeocode', function (e) {
-                                const center = e.geocode.center;
-                                editMap.setView(center, 16);
-                                if (editMarker) editMap.removeLayer(editMarker);
-                                editMarker = L.marker(center).addTo(editMap);
-                                document.getElementById('editLatitude').value = center.lat;
-                                document.getElementById('editLongitude').value = center.lng;
-                                reverseGeocode(center.lat, center.lng, 'editPadLocation');
-                            })
-                            .addTo(editMap);
-                        editMap.on('click', function (e) {
-                            if (editMarker) editMap.removeLayer(editMarker);
-                            editMarker = L.marker(e.latlng).addTo(editMap);
-                            document.getElementById('editLatitude').value = e.latlng.lat;
-                            document.getElementById('editLongitude').value = e.latlng.lng;
-                            reverseGeocode(e.latlng.lat, e.latlng.lng, 'editPadLocation');
-                        });
-                    } else {
-                        editMap.invalidateSize();
-                        // Move marker to current location
-                        const lat = btn.getAttribute('data-latitude') || 7.9092;
-                        const lng = btn.getAttribute('data-longitude') || 125.0949;
-                        editMap.setView([lat, lng], 16);
+                    editMap.on('click', function (e) {
                         if (editMarker) editMap.removeLayer(editMarker);
-                        editMarker = L.marker([lat, lng]).addTo(editMap);
-                    }
-                }, 300);
+                        editMarker = L.marker(e.latlng).addTo(editMap);
+                        editLatitudeInput.value = e.latlng.lat;
+                        editLongitudeInput.value = e.latlng.lng;
+                        // Optionally, reverse geocode to update the location input
+                        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${e.latlng.lat}&lon=${e.latlng.lng}&format=json`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data && data.display_name) {
+                                    editPadLocationInput.value = data.display_name;
+                                }
+                            });
+                    });
+                } else {
+                    editMap.invalidateSize();
+                }
             });
-        });
 
-        // Navigation for edit modal
-        nextButtonEdit.addEventListener('click', function () {
-            const lat = document.getElementById('editLatitude').value;
-            const lng = document.getElementById('editLongitude').value;
-            if (!lat || !lng) {
-                alert('Please select a location on the map first.');
-                return;
-            }
-            mapStepEdit.style.display = 'none';
-            formStepEdit.style.display = 'block';
-            nextButtonEdit.style.display = 'none';
-            submitButtonEdit.style.display = 'inline-block';
-            backButtonEdit.style.display = 'inline-block';
-        });
-        backButtonEdit.addEventListener('click', function () {
-            mapStepEdit.style.display = 'block';
-            formStepEdit.style.display = 'none';
-            nextButtonEdit.style.display = 'inline-block';
-            submitButtonEdit.style.display = 'none';
-            backButtonEdit.style.display = 'none';
-            if (editMap) setTimeout(() => editMap.invalidateSize(), 100);
-        });
-        cancelButtonEdit.addEventListener('click', function () {
-            // Reset modal to initial state
-            mapStepEdit.style.display = 'block';
-            formStepEdit.style.display = 'none';
-            nextButtonEdit.style.display = 'inline-block';
-            submitButtonEdit.style.display = 'none';
-            backButtonEdit.style.display = 'none';
-            if (editMap) setTimeout(() => editMap.invalidateSize(), 100);
-            const modalInstance = bootstrap.Modal.getInstance(editPadModal);
-            if (modalInstance) modalInstance.hide();
+            // Handle the two-step process
+            const nextButtonEdit = document.getElementById('nextButtonEdit');
+            const submitButtonEdit = document.getElementById('submitButtonEdit');
+            const mapStepEdit = document.getElementById('mapStepEdit');
+            const formStepEdit = document.getElementById('formStepEdit');
+
+            nextButtonEdit.addEventListener('click', function () {
+                const locationVal = editPadLocationInput.value.trim();
+                if (!locationVal) {
+                    alert('Please select a location before proceeding.');
+                    return;
+                }
+                mapStepEdit.style.display = 'none';
+                formStepEdit.style.display = 'block';
+                nextButtonEdit.style.display = 'none';
+                submitButtonEdit.style.display = 'inline-block';
+            });
+
+            submitButtonEdit.addEventListener('click', function () {
+                document.getElementById('editPadForm').submit();
+            });
         });
     });
     </script>

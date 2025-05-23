@@ -3,8 +3,8 @@
 @section('content')
     <div class="container">
         <h2>Available Pads</h2>
-        <form method="GET" action="{{ route('tenant.pads.index') }}" class="mb-3">
-            <div class="row g-3">
+        <form method="GET" action="{{ route('tenant.pads.index') }}" class="mb-4">
+            <div class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <div class="input-group">
                         <input type="text" name="search" class="form-control" placeholder="Search pads..."
@@ -24,11 +24,12 @@
                 </div>
                 <div class="col-md-3">
                     <select name="location_filter" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Locations</option>
-                        @foreach($pads->pluck('padLocation')->unique() as $location)
-                            <option value="{{ $location }}" {{ request('location_filter') == $location ? 'selected' : '' }}>
-                                {{ $location }}</option>
-                        @endforeach
+                    @foreach($pads->pluck('padLocation')->map(function($loc) {
+                        $parts = explode(',', $loc);
+                        return isset($parts[2]) ? trim($parts[2]) : trim($loc);
+                    })->unique()->sort() as $city)
+                        <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
+                    @endforeach
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -46,6 +47,11 @@
                 </div>
                 <div class="col-md-1">
                     <a href="{{ route('tenant.pads.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
+                    @if($pads->isEmpty())
+                        <div class="col-12">
+                            <div class="alert alert-info text-center">No pads found.</div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </form>
@@ -70,11 +76,9 @@
                                 <p class="card-text"><strong>Landlord:</strong> {{ $pad->landlord->first_name ?? 'N/A' }}
                                     {{ $pad->landlord->last_name ?? '' }}</p>
                                 @if ($pad->number_of_boarders >= $pad->vacancy)
-                                    <p class="card-text"><strong>Vacant:</strong>
-                                        Full</p>
+                                    <p class="card-text"><strong>Status:</strong> Fully Occupied</p>
                                 @else
-                                    <p class="card-text"><strong>Vacant:</strong>
-                                        {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
+                                    <p class="card-text"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
                                 @endif
                             </div>
                         </a>
@@ -84,6 +88,8 @@
             @endforeach
         </div>
 
-        {{ $pads->links() }}
+        <div class="mt-3">
+            {{ $pads->appends(request()->query())->links('pagination::bootstrap-5') }}
+        </div>
     </div>
 @endsection

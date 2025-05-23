@@ -4,43 +4,59 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">System Logs</h4>
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex align-items-center">
+                    <h3 class="card-title mb-0">System Logs</h3>
                 </div>
                 <div class="card-body">
                     <!-- Search and Filters -->
-                    <form action="{{ route('admin.logs.index') }}" method="GET" class="row g-2 mb-3 align-items-center">
-                        <div class="col-md-4">
-                            <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ request('search') }}">
-                        </div>
-                        <div class="col-md-2">
-                            <select name="action_filter" class="form-select" onchange="this.form.submit()">
-                                <option value="">All Actions</option>
-                                @foreach($actions as $action)
-                                    <option value="{{ $action }}" {{ request('action_filter') == $action ? 'selected' : '' }}>
-                                        {{ ucfirst($action) }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <select name="user_filter" class="form-select" onchange="this.form.submit()">
-                                <option value="">All Users</option>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}" {{ request('user_filter') == $user->id ? 'selected' : '' }}>
-                                        {{ $user->first_name }} {{ $user->last_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <input type="date" name="date_from" class="form-control" placeholder="From Date" value="{{ request('date_from') }}" onchange="this.form.submit()">
-                        </div>
-                        <div class="col-md-2">
-                            <input type="date" name="date_to" class="form-control" placeholder="To Date" value="{{ request('date_to') }}" onchange="this.form.submit()">
+                    <form action="{{ route('admin.logs.index') }}" method="GET" class="mb-4">
+                        <div class="row align-items-end">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ request('search') }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <select name="action_filter" class="form-control" onchange="this.form.submit()">
+                                        <option value="">All Actions</option>
+                                        @foreach($actions as $action)
+                                            <option value="{{ $action }}" {{ request('action_filter') == $action ? 'selected' : '' }}>
+                                                {{ ucfirst($action) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <select name="user_filter" class="form-control" onchange="this.form.submit()">
+                                        <option value="">All Users</option>
+                                        @foreach($users as $user)
+                                            <option value="{{ $user->id }}" {{ request('user_filter') == $user->id ? 'selected' : '' }}>
+                                                {{ $user->first_name }} {{ $user->last_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <input type="date" name="date_from" class="form-control" placeholder="From Date" value="{{ request('date_from') }}" onchange="this.form.submit()">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <input type="date" name="date_to" class="form-control" placeholder="To Date" value="{{ request('date_to') }}" onchange="this.form.submit()">
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex justify-content-end">
+                                <a href="{{ route('admin.logs.export', request()->all()) }}" class="btn btn-success">Export Logs</a>
+                            </div>
                         </div>
                     </form>
+                    
                     <div class="table-responsive">
                         <table class="table table-hover mb-0 align-middle table-sm">
                             <thead class="table-light">

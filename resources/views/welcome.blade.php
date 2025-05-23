@@ -80,7 +80,11 @@
                                         <h5 class="card-title">{{ $pad->padName }}</h5>
                                         <p class="card-text mb-1"><strong>Location:</strong> {{ $pad->padLocation }}</p>
                                         <p class="card-text mb-1"><strong>Rent:</strong> ₱{{ number_format($pad->padRent, 2) }}</p>
-                                        <p class="card-text mb-1"><strong>Boarders:</strong> {{ $pad->number_of_boarders ?? 0 }}</p>
+                                        @if ($pad->number_of_boarders >= $pad->vacancy)
+                                            <p class="card-text mb-1"><strong>Status:</strong> Fully Occupied</p>
+                                        @else
+                                            <p class="card-text mb-1"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
+                                        @endif
                                     </div>
                                 </div>
                             </a>
@@ -91,8 +95,8 @@
                         </div>
                     @endforelse
                 </div>
-                <div class="d-flex justify-content-center mt-4">
-                    {{ $pads->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+                <div class="mt-3">
+                    {{ $pads->appends(request()->query())->links('pagination::bootstrap-5') }}
                 </div>
             </div>
             <div id="map-section" class="mt-5">
@@ -190,6 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h5>{{ $pad->padName }}</h5>
                     <p><strong>Location:</strong> {{ $pad->padLocation }}</p>
                     <p><strong>Rent:</strong> ₱{{ number_format($pad->padRent, 2) }}</p>
+                    <a href="{{ route('guest.pads.show', $pad->padID) }}" target="_blank">View</a>
                 </div>
             `;
             marker{{ $pad->padID }}.bindPopup(popupContent{{ $pad->padID }});
