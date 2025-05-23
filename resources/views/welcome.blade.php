@@ -175,6 +175,8 @@
 
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the map with the default coordinates and zoom
@@ -184,6 +186,17 @@ document.addEventListener('DOMContentLoaded', function() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
+
+    // Add geocoder control for searching locations
+    L.Control.geocoder({
+        defaultMarkGeocode: false
+    })
+        .on('markgeocode', function (e) {
+            const center = e.geocode.center;
+            map.setView(center, 16);
+            // Optionally, add a marker or popup here if you want
+        })
+        .addTo(map);
 
     // Add markers for each pad
     @foreach($pads as $pad)

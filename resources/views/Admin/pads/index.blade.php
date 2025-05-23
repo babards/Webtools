@@ -398,7 +398,6 @@
 
                             reverseGeocode(e.latlng.lat, e.latlng.lng, 'padLocation');
                         });
-
                     }
                     setTimeout(() => map.invalidateSize(), 100);
                 });
@@ -495,6 +494,21 @@
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
                     }).addTo(editMap);
+
+                    // Add geocoder control for searching locations in edit modal
+                    L.Control.geocoder({
+                        defaultMarkGeocode: false
+                    })
+                        .on('markgeocode', function (e) {
+                            const center = e.geocode.center;
+                            editMap.setView(center, 16);
+                            if (editMarker) editMap.removeLayer(editMarker);
+                            editMarker = L.marker(center).addTo(editMap);
+                            document.getElementById('editLatitude').value = center.lat;
+                            document.getElementById('editLongitude').value = center.lng;
+                            reverseGeocode(center.lat, center.lng, 'editPadLocation');
+                        })
+                        .addTo(editMap);
 
                     editMap.on('click', function (e) {
                         if (editMarker) editMap.removeLayer(editMarker);
@@ -648,6 +662,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 @endsection
 
 

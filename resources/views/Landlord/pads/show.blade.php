@@ -1,9 +1,3 @@
-<style>
-    [id^="parent-placeholder-"], [id*="parent-placeholder-"] {
-        display: none !important;
-    }
-</style>
-
 @extends('layouts.app')
 
 @section('content')
@@ -289,11 +283,14 @@
                             <input type="number" name="padRent" id="editPadRent" class="form-control" required>
                         </div>
                         <div class="mb-3">
+                            <label>Vacancy</label>
+                            <input type="number" name="vacancy" id="editPadVacancy" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
                             <label>Status</label>
                             <select name="padStatus" id="editPadStatus" class="form-select" required>
                                 <option value="available">Available</option>
                                 <option value="occupied">Occupied</option>
-                                <option value="maintenance">Maintenance</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -447,6 +444,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }, 300);
             });
         });
+
         // Navigation for edit modal
         nextButtonEdit.addEventListener('click', function () {
             const lat = document.getElementById('editLatitude').value;

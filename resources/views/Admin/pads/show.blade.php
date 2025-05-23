@@ -93,7 +93,7 @@
                 </div>
             </div>
 
-            <div class="d-flex gap-2">
+            <div class="d-flex">
                 <a href="{{ route('admin.pads.index') }}" class="btn btn-outline-secondary">
                     Back to List
                 </a>
@@ -104,83 +104,7 @@
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <h4 class="card-title mb-3">Map Location</h4>
-        <div id="staticMap" style="height: 400px; width: 100%; border-radius: 10px;"></div>
-    </div>
-</div>
-
-<!-- Edit Pad Modal (Two-Step: Map + Form) -->
-<div class="modal fade" id="editPadModal" tabindex="-1" aria-labelledby="editPadModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <form method="POST" id="editPadForm" enctype="multipart/form-data">
-            @csrf
-            @method('PUT')
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editPadModalLabel">Edit Pad - Update Location</h5>
-                </div>
-                <div class="modal-body">
-                    <!-- Step 1: Location -->
-                    <div id="mapStepEdit">
-                        <div id="editMap" style="height: 400px;"></div>
-                        <input type="hidden" name="latitude" id="editLatitude">
-                        <input type="hidden" name="longitude" id="editLongitude">
-                        <div class="mb-3">
-                            <label>Location</label>
-                            <input type="text" name="padLocation" id="editPadLocation" class="form-control" required>
-                        </div>
-                    </div>
-                    <!-- Step 2: Form -->
-                    <div id="formStepEdit" style="display: none;">
-                        <input type="hidden" name="padID" id="editPadId">
-                        <div class="mb-3">
-                            <label>Name</label>
-                            <input type="text" name="padName" id="editPadName" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Description</label>
-                            <textarea name="padDescription" id="editPadDescription" class="form-control"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label>Rent</label>
-                            <input type="number" name="padRent" id="editPadRent" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Status</label>
-                            <select name="padStatus" id="editPadStatus" class="form-select" required>
-                                <option value="available">Available</option>
-                                <option value="occupied">Occupied</option>
-                                <option value="maintenance">Maintenance</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editPadLandlord" class="form-label">Assign to Landlord <span class="text-danger">*</span></label>
-                            <select class="form-select" id="editPadLandlord" name="userID" required>
-                                <option value="">Select a Landlord</option>
-                                @if(isset($landlords))
-                                    @foreach($landlords as $landlord)
-                                        <option value="{{ $landlord->id }}">
-                                            {{ $landlord->first_name }} {{ $landlord->last_name }} ({{ $landlord->email }})
-                                        </option>
-                                    @endforeach
-                                @else
-                                    <option value="" disabled>No landlords available</option>
-                                @endif
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label>Image</label>
-                            <input type="file" name="padImage" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" id="cancelButtonEdit">Cancel</button>
-                    <button type="button" class="btn btn-secondary" id="backButtonEdit" style="display: none;">Back</button>
-                    <button type="button" class="btn btn-primary" id="nextButtonEdit">Next</button>
-                    <button type="submit" class="btn btn-primary" id="submitButtonEdit" style="display: none;">Update</button>
-                </div>
-            </div>
-        </form>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 10px;"></div>
     </div>
 </div>
 
@@ -275,16 +199,30 @@
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // --- Edit Modal Map Logic ---
-        let editMap, editMarker;
-        const mapStepEdit = document.getElementById('mapStepEdit');
-        const formStepEdit = document.getElementById('formStepEdit');
-        const nextButtonEdit = document.getElementById('nextButtonEdit');
-        const backButtonEdit = document.getElementById('backButtonEdit');
-        const submitButtonEdit = document.getElementById('submitButtonEdit');
-        const cancelButtonEdit = document.getElementById('cancelButtonEdit');
-        const editPadModal = document.getElementById('editPadModal');
+        document.addEventListener("DOMContentLoaded", function () {
+            var lat = {{ $pad->latitude ?? 0 }};
+            var lng = {{ $pad->longitude ?? 0 }};
+
+            var map = L.map('map').setView([lat, lng], 16);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add geocoder control for searching locations
+            L.Control.geocoder({
+                defaultMarkGeocode: false
+            })
+                .on('markgeocode', function (e) {
+                    const center = e.geocode.center;
+                    map.setView(center, 16);
+                })
+                .addTo(map);
+
+            L.marker([lat, lng]).addTo(map)
+                .bindPopup("{{ $pad->padName }}")
+                .openPopup();
 
             // Edit Modal Map Logic
             let editMap, editMarker;
@@ -300,6 +238,27 @@
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
                     }).addTo(editMap);
+
+                    // Add geocoder control for searching locations in edit modal
+                    L.Control.geocoder({
+                        defaultMarkGeocode: false
+                    })
+                        .on('markgeocode', function (e) {
+                            const center = e.geocode.center;
+                            editMap.setView(center, 16);
+                            if (editMarker) editMap.removeLayer(editMarker);
+                            editMarker = L.marker(center).addTo(editMap);
+                            editLatitudeInput.value = center.lat;
+                            editLongitudeInput.value = center.lng;
+                            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${center.lat}&lon=${center.lng}&format=json`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data && data.display_name) {
+                                        editPadLocationInput.value = data.display_name;
+                                    }
+                                });
+                        })
+                        .addTo(editMap);
 
                     editMarker = L.marker([lat, lng]).addTo(editMap);
 
@@ -344,7 +303,6 @@
                 document.getElementById('editPadForm').submit();
             });
         });
-    });
     </script>
 @endpush
 @endsection

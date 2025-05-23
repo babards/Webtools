@@ -69,6 +69,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             var map = L.map('map').setView([7.9092, 125.0949], 15); // Default center
@@ -76,6 +77,16 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
+
+            // Add geocoder control for searching locations
+            L.Control.geocoder({
+                defaultMarkGeocode: false
+            })
+                .on('markgeocode', function (e) {
+                    const center = e.geocode.center;
+                    map.setView(center, 16);
+                })
+                .addTo(map);
 
             @foreach ($pads as $pad)
                 @if($pad->latitude && $pad->longitude)
