@@ -2,6 +2,7 @@
 
 @section('content')
     <div class="container">
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Pad Management</h2>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">

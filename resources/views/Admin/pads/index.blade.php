@@ -16,9 +16,8 @@
             <div class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <div class="input-group">
-                        <input type="text" name="search" class="form-control"
-                            placeholder="Search pads by name, location, landlord..." value="{{ request('search') }}">
-                        <button class="btn btn-outline-secondary" type="submit">Search</button>
+                        <input type="text" name="search" class="form-control" placeholder="Search pads by name, location, landlord..." value="{{ request('search') }}">
+                        <button class="btn btn-primary" type="submit">Search</button>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -45,16 +44,10 @@
                 <div class="col-md-2">
                     <select name="price_filter" class="form-select" onchange="this.form.submit()">
                         <option value="">All Prices</option>
-                        <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below
-                            ₱1,000</option>
-                        <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 -
-                            ₱2,000
-                        </option>
-                        <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 -
-                            ₱3,000
-                        </option>
-                        <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above
-                            ₱3,000</option>
+                        <option value="below_1000" {{ request('price_filter') == 'below_1000' ? 'selected' : '' }}>Below ₱1,000</option>
+                        <option value="1000_2000" {{ request('price_filter') == '1000_2000' ? 'selected' : '' }}>₱1,000 - ₱2,000</option>
+                        <option value="2000_3000" {{ request('price_filter') == '2000_3000' ? 'selected' : '' }}>₱2,000 - ₱3,000</option>
+                        <option value="above_3000" {{ request('price_filter') == 'above_3000' ? 'selected' : '' }}>Above ₱3,000</option>
                     </select>
                 </div>
             </div>
@@ -75,7 +68,7 @@
         <div class="row">
             @forelse($pads as $pad)
                 <div class="col-md-3 mb-4" id="pad-card-{{ $pad->padID }}">
-                    <div class="card h-100 shadow-sm">
+                    <div class="card h-100 d-flex flex-column shadow-sm">
                         <a href="{{ route('admin.pads.show', $pad->padID) }}" style="text-decoration: none; color: inherit;">
                             @if($pad->padImage)
                                 <img src="{{ asset('storage/' . $pad->padImage) }}" class="card-img-top"

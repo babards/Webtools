@@ -3,7 +3,6 @@
 @section('content')
     <div class="container">
         <h2>Available Pads</h2>
-
         <form method="GET" action="{{ route('tenant.pads.index') }}" class="mb-4">
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
@@ -84,6 +83,7 @@
                             </div>
                         </a>
                     </div>
+
                 </div>
             @endforeach
         </div>

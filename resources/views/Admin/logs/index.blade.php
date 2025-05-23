@@ -56,44 +56,41 @@
                             </div>
                         </div>
                     </form>
-
-                    <!-- Logs Table -->
+                    
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped">
-                            <thead>
+                        <table class="table table-hover mb-0 align-middle table-sm">
+                            <thead class="table-light">
                                 <tr>
-                                    <th>Date & Time</th>
-                                    <th>User</th>
-                                    <th>Action</th>
-                                    <th>Description</th>
-                                    <th>IP Address</th>
+                                    <th class="py-2">Date & Time</th>
+                                    <th class="py-2">User</th>
+                                    <th class="py-2">Action</th>
+                                    <th class="py-2">Description</th>
+                                    <th class="py-2">IP Address</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($logs as $log)
                                     <tr>
-                                        <td>{{ $log->created_at->format('Y-m-d H:i:s') }}</td>
-                                        <td>
+                                        <td class="py-2">{{ $log->created_at->format('Y-m-d H:i:s') }}</td>
+                                        <td class="py-2">
                                             @if($log->user)
                                                 {{ $log->user->first_name }} {{ $log->user->last_name }}
                                             @else
                                                 <span class="text-muted">Guest</span>
                                             @endif
                                         </td>
-                                        <td>{{ ucfirst($log->action) }}</td>
-                                        <td>{{ $log->description }}</td>
-                                        <td>{{ $log->ip_address }}</td>
+                                        <td class="py-2">{{ ucfirst($log->action) }}</td>
+                                        <td class="py-2">{{ $log->description }}</td>
+                                        <td class="py-2">{{ $log->ip_address }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center">No logs found</td>
+                                        <td colspan="5" class="text-center text-muted py-3">No logs found</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
-
-                    <!-- Pagination -->
                     <div class="mt-3">
                         {{ $logs->links('pagination::bootstrap-5') }}
                     </div>

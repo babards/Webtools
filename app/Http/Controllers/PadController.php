@@ -508,6 +508,7 @@ class PadController extends Controller
 
             // Increment number of boarders
             $pad->increment('number_of_boarders');
+
             $this->checkAndUpdatePadStatus($pad->padID);
 
             // Add the tenant to pad_boarders table

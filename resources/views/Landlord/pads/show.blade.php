@@ -1,3 +1,9 @@
+<style>
+    [id^="parent-placeholder-"], [id*="parent-placeholder-"] {
+        display: none !important;
+    }
+</style>
+
 @extends('layouts.app')
 
 @section('content')
@@ -441,7 +447,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 }, 300);
             });
         });
-
         // Navigation for edit modal
         nextButtonEdit.addEventListener('click', function () {
             const lat = document.getElementById('editLatitude').value;
