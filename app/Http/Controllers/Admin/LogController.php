@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Log;
 use Illuminate\Http\Request;
+use App\Exports\LogsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LogController extends Controller
 {
@@ -49,5 +51,35 @@ class LogController extends Controller
         $users = \App\Models\User::orderBy('first_name')->get();
 
         return view('admin.logs.index', compact('logs', 'actions', 'users'));
+    }
+
+    public function export(Request $request)
+    {
+        // Pass filters to the export class if needed, or filter here and pass a collection
+        $query = Log::query();
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('action', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('action_filter')) {
+            $query->where('action', $request->input('action_filter'));
+        }
+        if ($request->filled('user_filter')) {
+            $query->where('user_id', $request->input('user_filter'));
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
+        $logs = $query->orderBy('created_at', 'desc')->get();
+        return Excel::download(new LogsExport($logs), 'system_logs.xlsx');
     }
 } 

@@ -64,35 +64,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Quick Links -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Quick Links</h5>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <a href="{{ route('admin.users.index') }}" class="btn btn-primary w-100 mb-2">
-                                    <i class="fas fa-users me-2"></i>Manage Users
-                                </a>
-                            </div>
-                            <div class="col-md-3">
-                                <a href="{{ route('admin.pads.index') }}" class="btn btn-success w-100 mb-2">
-                                    <i class="fas fa-home me-2"></i>Manage Pads
-                                </a>
-                            </div>
-                            <div class="col-md-3">
-                                <a href="{{ route('admin.logs.index') }}" class="btn btn-info w-100 mb-2">
-                                    <i class="fas fa-history me-2"></i>View Logs
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     
     <div class="mt-4" id="map" style="height: 600px;"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"

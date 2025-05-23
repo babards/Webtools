@@ -8,10 +8,9 @@
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>Tenant Name</th>
+                    <th>Tenant</th>
                     <th>Duration</th>
                     <th>Status</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -24,7 +23,17 @@
                             $diff = $start->diff($now);
                         @endphp
                         <td>{{ $diff->m }} months and {{ $diff->d }} days</td>
-                        <td>{{ $boarder->status ?? 'N/A' }}</td>
+                        <td>
+                            <span class="badge 
+                                @if($boarder->status == 'active') bg-success
+                                @elseif($boarder->status == 'left') bg-danger
+                                @elseif($boarder->status == 'kicked') bg-warning text-dark
+                                @else bg-secondary
+                                @endif
+                            ">
+                                {{ ucfirst($boarder->status) }}
+                            </span>
+                        </td>
                     </tr>
                 @endforeach
             </tbody>

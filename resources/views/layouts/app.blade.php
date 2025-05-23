@@ -16,7 +16,7 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 sidebar">
+            <div class="sidebar d-flex flex-column align-items-start py-4 position-fixed" style="top:0; left:0; height:100vh; width:240px; background-color:#f8f9fa; border-right:1px solid #dee2e6; z-index:1030;">
                 <div class="text-center mb-4">
                     <h4>FindMyPad</h4>
                 </div>
@@ -78,7 +78,7 @@
             </div>
 
             <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 main-content">
+            <div class="main-content" style="margin-left:240px; width:calc(100% - 240px);">
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{ session('success') }}
@@ -133,6 +133,20 @@
         });
     </script>
     @endif
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Remove any text node that looks like a parent-placeholder artifact
+        Array.from(document.body.childNodes).forEach(function(node) {
+            if (
+                node.nodeType === Node.TEXT_NODE &&
+                node.textContent.trim().match(/^##parent-placeholder-[a-f0-9]+##$/)
+            ) {
+                node.parentNode.removeChild(node);
+            }
+        });
+    });
+    </script>
 </body>
 </html>
 
@@ -147,6 +161,12 @@
         background-color: #f8f9fa;
         padding-top: 20px;
         border-right: 1px solid #dee2e6;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 240px;
+        z-index: 1030;
     }
     .sidebar .nav-link {
         color: #333;
@@ -166,6 +186,8 @@
     .main-content {
         padding: 20px;
         background-color: #fff;
+        margin-left: 240px;
+        width: calc(100% - 240px);
     }
     .auth-container {
         min-height: 100vh;
