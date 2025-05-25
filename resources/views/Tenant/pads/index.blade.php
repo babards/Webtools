@@ -24,12 +24,13 @@
                 </div>
                 <div class="col-md-3">
                     <select name="location_filter" class="form-select" onchange="this.form.submit()">
-                    @foreach($pads->pluck('padLocation')->map(function($loc) {
-                        $parts = explode(',', $loc);
-                        return isset($parts[2]) ? trim($parts[2]) : trim($loc);
-                    })->unique()->sort() as $city)
-                        <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
-                    @endforeach
+                        <option value="">All Locations</option>
+                        @foreach($pads->pluck('padLocation')->map(function($loc) {
+                            $parts = explode(',', $loc);
+                            return isset($parts[2]) ? trim($parts[2]) : trim($loc);
+                        })->unique()->sort() as $city)
+                            <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -47,14 +48,15 @@
                 </div>
                 <div class="col-md-1">
                     <a href="{{ route('tenant.pads.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
-                    @if($pads->isEmpty())
-                        <div class="col-12">
-                            <div class="alert alert-info text-center">No pads found.</div>
-                        </div>
-                    @endif
                 </div>
             </div>
         </form>
+
+        @if($pads->isEmpty())
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle me-2"></i>No pads found matching your criteria.
+            </div>
+        @endif
 
         <div class="row">
             @foreach($pads as $pad)

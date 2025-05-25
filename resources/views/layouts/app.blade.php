@@ -16,18 +16,51 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <div class="sidebar d-flex flex-column align-items-start py-4 position-fixed" style="top:0; left:0; height:100vh; width:240px; background-color:#f8f9fa; border-right:1px solid #dee2e6; z-index:1030;">
-                <div class="text-center mb-4">
-                    <h4>FindMyPad</h4>
+            <div class="sidebar d-flex flex-column position-fixed" style="top:0; left:0; height:100vh; width:240px; background-color:#f8f9fa; border-right:1px solid #dee2e6; z-index:1030;">
+                <!-- Header -->
+                <div class="text-center py-3 border-bottom">
+                    <h5 class="mb-0">FindMyPad</h5>
                 </div>
-                <nav class="nav flex-column">
-                    <div class="ps-3 mb-3">
-                        <div class="fw-bold">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</div>
-                        <div class="small text-muted">{{ auth()->user()->email }}</div>
-                        <div class="small">
-                            <span class="badge bg-secondary">{{ ucfirst(auth()->user()->role) }}</span>
+                
+                <!-- User Section -->
+                <div class="user-section p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2">
+                            <a href="{{ route('profile.edit') }}" class="text-decoration-none">
+                                @if(auth()->user()->avatar_url)
+                                    <img src="{{ auth()->user()->avatar_url }}" 
+                                         alt="Profile Picture" 
+                                         class="rounded-circle shadow-sm user-avatar" 
+                                         style="width: 55px; height: 55px; object-fit: cover;"
+                                         title="Click to edit profile">
+                                @else
+                                    <div class="rounded-circle avatar-gradient d-flex align-items-center justify-content-center shadow-sm user-avatar" 
+                                         style="width: 55px; height: 55px;"
+                                         title="Click to edit profile">
+                                        <i class="fas fa-user fa-lg text-white"></i>
+                                    </div>
+                                @endif
+                            </a>
+                        </div>
+                        <div class="flex-grow-1 user-info">
+                            <div class="fw-bold text-truncate" style="max-width: 150px; font-size: 0.9rem;" title="{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}">
+                                {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}
+                            </div>
+                            <div class="small text-muted text-truncate" style="max-width: 150px;" title="{{ auth()->user()->email }}">
+                                {{ auth()->user()->email }}
+                            </div>
                         </div>
                     </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-secondary small">{{ ucfirst(auth()->user()->role) }}</span>
+                        <a href="{{ route('profile.edit') }}" class="btn btn-outline-primary btn-sm px-2 py-1" style="font-size: 0.75rem;">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="nav flex-column flex-grow-1 py-2">
                     <!-- Admin Navigation -->
                     @if(auth()->user()->role === 'admin')
                         <a class="nav-link {{ Route::currentRouteName() === 'admin.dashboard' ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
@@ -66,15 +99,18 @@
                             <i class="fas fa-file-alt me-2"></i>My Applications
                         </a>
                     @endif
-
+                    
                     <!-- Logout Form -->
-                    <form action="{{ route('logout') }}" method="POST" class="mt-auto">
-                        @csrf
-                        <button type="submit" class="nav-link w-100 text-start border-0 bg-transparent">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
-                        </button>
-                    </form>
+                    <div class="mt-auto border-top pt-2">
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="nav-link w-100 text-start border-0 bg-transparent text-danger">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </button>
+                        </form>
+                    </div>
                 </nav>
+            </div>
             </div>
 
             <!-- Main Content -->
@@ -145,6 +181,22 @@
                 node.parentNode.removeChild(node);
             }
         });
+        
+        // Avatar interaction enhancements
+        const userAvatar = document.querySelector('.user-avatar');
+        const userSection = document.querySelector('.user-section');
+        
+        if (userAvatar && userSection) {
+            // Add subtle animation on hover
+            userSection.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.transition = 'all 0.3s ease';
+            });
+            
+            userSection.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        }
     });
     </script>
 </body>
@@ -159,7 +211,6 @@
     .sidebar {
         min-height: 100vh;
         background-color: #f8f9fa;
-        padding-top: 20px;
         border-right: 1px solid #dee2e6;
         position: fixed;
         top: 0;
@@ -167,21 +218,25 @@
         height: 100vh;
         width: 240px;
         z-index: 1030;
+        overflow-y: auto;
     }
     .sidebar .nav-link {
         color: #333;
-        padding: 10px 20px;
-        margin: 5px 0;
-        border-radius: 5px;
+        padding: 8px 16px;
+        margin: 2px 8px;
+        border-radius: 6px;
         transition: all 0.3s ease;
+        font-size: 0.9rem;
     }
     .sidebar .nav-link:hover {
         background-color: #e9ecef;
         color: #0d6efd;
+        transform: translateX(4px);
     }
     .sidebar .nav-link.active {
         background-color: #0d6efd;
         color: white;
+        box-shadow: 0 2px 4px rgba(13, 110, 253, 0.3);
     }
     .main-content {
         padding: 20px;
@@ -198,6 +253,46 @@
     }
     .alert {
         margin-bottom: 20px;
+    }
+    
+    /* Avatar Styling */
+    .sidebar .user-avatar {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+    
+    .sidebar .user-avatar:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+    }
+    
+    .sidebar .user-info {
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar .user-section {
+        background: transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar .user-section:hover {
+        background: rgba(255,255,255,0.1);
+        border-radius: 8px;
+    }
+    
+    /* Gradient background for default avatar */
+    .avatar-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .avatar-gradient-alt {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .avatar-gradient-blue {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     }
 
   

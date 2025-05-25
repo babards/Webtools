@@ -61,14 +61,6 @@
                             <div class="col-7">{{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</div>
                         @endif
                     </div>
-                    <div class="row mb-2">
-                        <div class="col-5 text-muted fw-bold">Created At:</div>
-                        <div class="col-7">{{ $pad->padCreatedAt }}</div>
-                    </div>
-                    <div class="row mb-2">
-                        <div class="col-5 text-muted fw-bold">Updated At:</div>
-                        <div class="col-7">{{ $pad->padUpdatedAt }}</div>
-                    </div>
                 </div>
             </div>
 

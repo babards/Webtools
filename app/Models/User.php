@@ -74,4 +74,21 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(PadApplication::class, 'user_id');
     }
+
+    // Get the avatar URL or default placeholder
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar) {
+            // Check if file exists in storage/app/public/avatars
+            if (file_exists(storage_path('app/public/avatars/' . $this->avatar))) {
+                // First try the standard storage symlink
+                if (file_exists(public_path('storage/avatars/' . $this->avatar))) {
+                    return asset('storage/avatars/' . $this->avatar);
+                }
+                // Fallback to direct avatar serving route
+                return route('avatars.serve', ['filename' => $this->avatar]);
+            }
+        }
+        return null;
+    }
 }

@@ -43,6 +43,48 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Protected routes
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Profile routes
+    Route::get('/profile/edit', [UserController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+    
+    // Debug route for avatar issues (temporary)
+    Route::get('/debug-avatar', function() {
+        $user = auth()->user();
+        $data = [
+            'user_avatar' => $user->avatar,
+            'avatar_url_method' => $user->avatar_url,
+            'direct_asset_path' => $user->avatar ? asset('storage/avatars/' . $user->avatar) : 'No avatar',
+            'storage_path_exists' => $user->avatar ? file_exists(storage_path('app/public/avatars/' . $user->avatar)) : false,
+            'public_path_exists' => $user->avatar ? file_exists(public_path('storage/avatars/' . $user->avatar)) : false,
+            'storage_directory_contents' => scandir(storage_path('app/public/avatars')),
+            'public_directory_contents' => is_dir(public_path('storage/avatars')) ? scandir(public_path('storage/avatars')) : 'Directory does not exist'
+        ];
+        return response()->json($data);
+    })->name('debug.avatar');
+
+    // Direct avatar serving route (backup if symlink doesn't work)
+    Route::get('/avatars/{filename}', function($filename) {
+        $path = storage_path('app/public/avatars/' . $filename);
+        if (file_exists($path)) {
+            return response()->file($path);
+        }
+        abort(404);
+    })->name('avatars.serve');
+
+    // Test avatar upload functionality
+    Route::get('/test-avatar-upload', function() {
+        $avatarPath = storage_path('app/public/avatars');
+        $data = [
+            'avatars_directory_exists' => file_exists($avatarPath),
+            'avatars_directory_writable' => is_writable($avatarPath),
+            'avatars_directory_path' => $avatarPath,
+            'current_user_avatar' => auth()->user()->avatar,
+            'storage_app_public_exists' => file_exists(storage_path('app/public')),
+            'storage_app_public_writable' => is_writable(storage_path('app/public')),
+        ];
+        return response()->json($data);
+    })->name('test.avatar.upload');
 
     // Admin routes
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {

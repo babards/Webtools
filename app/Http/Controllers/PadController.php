@@ -44,7 +44,7 @@ class PadController extends Controller
         // Add location filter
         if ($request->filled('location_filter')) {
             $city = $request->input('location_filter');
-            $query->whereRaw("TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(padLocation, ',', 3), ',', -1)) LIKE ?", ["%$city%"]);
+            $query->where('padLocation', 'like', "%$city%");
         }
 
         // Add price range filter
@@ -205,7 +205,7 @@ class PadController extends Controller
         // Add location filter
         if ($request->filled('location_filter')) {
             $city = $request->input('location_filter');
-            $query->whereRaw("TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(padLocation, ',', 3), ',', -1)) LIKE ?", ["%$city%"]);
+            $query->where('padLocation', 'like', "%$city%");
         }
 
         // Add price range filter
@@ -381,7 +381,7 @@ class PadController extends Controller
         // Location filter
         if ($request->filled('location_filter')) {
             $city = $request->input('location_filter');
-            $query->whereRaw("TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(padLocation, ',', 3), ',', -1)) LIKE ?", ["%$city%"]);
+            $query->where('padLocation', 'like', "%$city%");
         }
 
         // Price range filter
