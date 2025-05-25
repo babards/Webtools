@@ -5,33 +5,28 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+return new class extends Migration {
     public function up(): void
     {
-        // First, update any existing records with 'occupied' status to 'fullyoccupied'
-        DB::table('pads')
-            ->where('padStatus', 'occupied')
-            ->update(['padStatus' => 'fullyoccupied']);
+        // Step 1: Add 'fullyoccupied' to the ENUM before using it
+        DB::statement("ALTER TABLE pads MODIFY COLUMN padStatus ENUM('available', 'occupied', 'fullyoccupied', 'maintenance') NOT NULL");
 
-        // Then modify the ENUM to replace 'occupied' with 'fullyoccupied'
+        // Step 2: Update 'occupied' values to 'fullyoccupied'
+        DB::table('pads')->where('padStatus', 'occupied')->update(['padStatus' => 'fullyoccupied']);
+
+        // Step 3: Remove 'occupied' from ENUM (optional but clean)
         DB::statement("ALTER TABLE pads MODIFY COLUMN padStatus ENUM('available', 'fullyoccupied', 'maintenance') NOT NULL");
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        // First, update any existing records with 'fullyoccupied' status back to 'occupied'
-        DB::table('pads')
-            ->where('padStatus', 'fullyoccupied')
-            ->update(['padStatus' => 'occupied']);
+        // Step 1: Add back 'occupied' temporarily to revert data
+        DB::statement("ALTER TABLE pads MODIFY COLUMN padStatus ENUM('available', 'occupied', 'fullyoccupied', 'maintenance') NOT NULL");
 
-        // Then modify the ENUM back to the original values
+        // Step 2: Change back to 'occupied'
+        DB::table('pads')->where('padStatus', 'fullyoccupied')->update(['padStatus' => 'occupied']);
+
+        // Step 3: Remove 'fullyoccupied' from ENUM
         DB::statement("ALTER TABLE pads MODIFY COLUMN padStatus ENUM('available', 'occupied', 'maintenance') NOT NULL");
     }
 };

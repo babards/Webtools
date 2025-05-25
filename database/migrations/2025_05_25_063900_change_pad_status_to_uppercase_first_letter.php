@@ -5,33 +5,28 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+return new class extends Migration {
+
     public function up(): void
     {
-        // Update existing records to uppercase first letter
+        // Step 1: Update values first — BEFORE changing the ENUM
         DB::table('pads')->where('padStatus', 'available')->update(['padStatus' => 'Available']);
         DB::table('pads')->where('padStatus', 'fullyoccupied')->update(['padStatus' => 'Fullyoccupied']);
         DB::table('pads')->where('padStatus', 'maintenance')->update(['padStatus' => 'Maintenance']);
 
-        // Update the ENUM to use uppercase first letter
+        // Step 2: Then update the ENUM to only contain capitalized values
         DB::statement("ALTER TABLE pads MODIFY COLUMN padStatus ENUM('Available', 'Fullyoccupied', 'Maintenance') NOT NULL");
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        // Revert records back to lowercase
+        // Step 1: Revert capitalized values back to lowercase
         DB::table('pads')->where('padStatus', 'Available')->update(['padStatus' => 'available']);
         DB::table('pads')->where('padStatus', 'Fullyoccupied')->update(['padStatus' => 'fullyoccupied']);
         DB::table('pads')->where('padStatus', 'Maintenance')->update(['padStatus' => 'maintenance']);
 
-        // Revert ENUM back to lowercase
+        // Step 2: Revert ENUM
         DB::statement("ALTER TABLE pads MODIFY COLUMN padStatus ENUM('available', 'fullyoccupied', 'maintenance') NOT NULL");
     }
+
 };
