@@ -103,6 +103,7 @@ Route::middleware(['auth'])->group(function () {
         // Logs
         Route::get('/logs', [App\Http\Controllers\Admin\LogController::class, 'index'])->name('logs.index');
         Route::get('/logs/export', [App\Http\Controllers\Admin\LogController::class, 'export'])->name('logs.export');
+        Route::get('/pads/{id}/images', [PadController::class, 'adminGetPadImages'])->name('pads.images');
     });
 
     // Landlord routes
@@ -126,6 +127,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/applications/export', [PadController::class, 'landlordExportApplications'])->name('applications.export');
         Route::get('/pads/{padId}/applications/export', [PadController::class, 'landlordExportApplications'])->name('pads.applications.export');
         Route::get('/boarders/export', [PadController::class, 'landlordExportBoarders'])->name('boarders.export');
+        Route::get('/pads/{id}/images', [PadController::class, 'getPadImages'])->name('pads.images');
     });
 
     // Tenant routes

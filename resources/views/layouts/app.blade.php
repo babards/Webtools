@@ -114,7 +114,7 @@
             </div>
 
             <!-- Main Content -->
-            <div class="main-content" style="margin-left:240px; width:calc(100% - 240px);">
+            <div class="main-content">
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{ session('success') }}
@@ -203,6 +203,17 @@
 </html>
 
 <style>
+    /* Prevent horizontal scrollbars */
+    html, body {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+    
+    .container-fluid {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+    
     .pad-img {
         width: 100%;
         height: 200px; /* Set your desired height */
@@ -219,6 +230,7 @@
         width: 240px;
         z-index: 1030;
         overflow-y: auto;
+        overflow-x: hidden;
     }
     .sidebar .nav-link {
         color: #333;
@@ -243,6 +255,8 @@
         background-color: #fff;
         margin-left: 240px;
         width: calc(100% - 240px);
+        overflow-x: hidden;
+        min-height: 100vh;
     }
     .auth-container {
         min-height: 100vh;
@@ -295,5 +309,20 @@
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     }
 
+    /* Responsive Design */
+    @media (max-width: 991.98px) {
+        .sidebar {
+            position: static !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: auto !important;
+            border-right: none !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+        .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+    }
   
 </style>

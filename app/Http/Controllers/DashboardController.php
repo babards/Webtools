@@ -42,8 +42,8 @@ class DashboardController extends Controller
             'pending_applications' => PadApplication::where('status', 'pending')->count(),
         ];
 
-        // ✅ Fetch pads with location data
-        $pads = Pad::select('padID', 'padName', 'padLocation', 'padRent', 'latitude', 'longitude')->get();
+        //  Fetch pads with location data
+        $pads = Pad::select('padID', 'padName', 'padLocation', 'padRent', 'padStatus', 'latitude', 'longitude')->get();
         return view('admin.dashboard', compact('stats', 'pads'));
 
     }

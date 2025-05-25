@@ -65,6 +65,9 @@
             </div>
         </div>
     
+
+        <h3 class="text-center mb-4">Pads Map</h3>
+   
     <div class="mt-4" id="map" style="height: 600px;"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -78,7 +81,7 @@
                 zoomControlOptions: {
                     position: 'topright'
                 }
-            }).setView([7.9092, 125.0949], 15);
+            }).setView([7.9042, 125.0928], 15);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
@@ -87,19 +90,18 @@
             // Add custom reset control
             L.Control.ResetView = L.Control.extend({
                 onAdd: function(map) {
-                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                    container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
-                    container.style.backgroundColor = 'white';
-                    container.style.width = '30px';
-                    container.style.height = '30px';
-                    container.style.display = 'flex';
-                    container.style.alignItems = 'center';
-                    container.style.justifyContent = 'center';
+                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    const link = L.DomUtil.create('a', 'leaflet-control-zoom-reset', container);
+                    link.innerHTML = '⌂';
+                    link.href = '#';
+                    link.title = 'Reset View';
+                    link.setAttribute('role', 'button');
+                    link.setAttribute('aria-label', 'Reset View');
                     
-                    container.onclick = function(e) {
-                        e.preventDefault();
-                        map.setView([7.9092, 125.0949], 15);
-                    }
+                    L.DomEvent.on(link, 'click', function(e) {
+                        L.DomEvent.preventDefault(e);
+                        map.setView([7.9042, 125.0928], 15);
+                    });
                     
                     return container;
                 },
@@ -116,23 +118,67 @@
             })
                 .on('markgeocode', function (e) {
                     const center = e.geocode.center;
-                    map.setView(center, 16);
+                    map.setView(center, 15);
                 })
                 .addTo(map);
 
             @foreach ($pads as $pad)
                 @if($pad->latitude && $pad->longitude)
-                    L.marker([{{ $pad->latitude }}, {{ $pad->longitude }}])
-                        .addTo(map)
-                        .bindPopup(`
-                                    <strong>{{ $pad->padName }}</strong><br>
-                                    Location: {{ $pad->padLocation }}<br>
-                                    Rent: ₱{{ $pad->padRent }}<br>
-                                    <a href="{{ route('admin.pads.show', $pad->padID) }}" target="_blank">View</a>
-                                `);
+                    const marker{{ $pad->padID }} = L.marker([{{ $pad->latitude }}, {{ $pad->longitude }}]).addTo(map);
+                    const popupContent{{ $pad->padID }} = `
+                        <div style="min-width: 200px;">
+                            <h5 style="margin-bottom: 8px; color: #333;">{{ $pad->padName }}</h5>
+                            <p style="margin-bottom: 5px;"><strong>Location:</strong> {{ $pad->padLocation }}</p>
+                            <p style="margin-bottom: 5px;"><strong>Rent:</strong> ₱{{ number_format($pad->padRent, 2) }}</p>
+                            @php
+                                $statusDisplay = [
+                                    'Available' => 'Available',
+                                    'Fullyoccupied' => 'Fully Occupied',
+                                    'Maintenance' => 'Maintenance'
+                                ];
+                            @endphp
+                            <p style="margin-bottom: 10px;"><strong>Status:</strong> {{ $statusDisplay[$pad->padStatus] ?? $pad->padStatus }}</p>
+                            <a href="{{ route('admin.pads.show', $pad->padID) }}" class="btn btn-primary btn-sm" target="_blank">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </a>
+                        </div>
+                    `;
+                    marker{{ $pad->padID }}.bindPopup(popupContent{{ $pad->padID }});
                 @endif
             @endforeach
+
+            // Keep the map centered on Valencia City instead of auto-fitting to all markers
         });
     </script>
+
+    <style>
+        #map {
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+        .leaflet-popup-content {
+            margin: 10px;
+        }
+        .leaflet-popup-content h5 {
+            margin-bottom: 5px;
+        }
+        .leaflet-popup-content p {
+            margin-bottom: 5px;
+        }
+        .leaflet-control-zoom-reset {
+            font-size: 18px;
+            line-height: 26px;
+            text-align: center;
+            text-decoration: none;
+            color: black;
+            display: block;
+            width: 26px;
+            height: 26px;
+        }
+        .leaflet-control-zoom-reset:hover {
+            background-color: #f4f4f4;
+            color: black;
+        }
+    </style>
 
 @endsection

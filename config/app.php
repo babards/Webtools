@@ -123,4 +123,28 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Valencia City Barangays
+    |--------------------------------------------------------------------------
+    |
+    | List of barangays in Valencia City, Bukidnon for location filters
+    |
+    */
+
+    'valencia_barangays' => [
+        'Bagontaas', 'Banlag', 'Barobo', 'Batangan', 'Catumbalon', 'Colonia', 
+        'Concepcion', 'Dagat-Kidavao', 'Guinoyuran', 'Kahapunan', 'Laligan', 
+        'Lilingayon', 'Lourdes', 'Lumbayao', 'Lumbo', 'Lurogan', 'Maapag', 
+        'Mabuhay', 'Mailag', 'Mt. Nebo', 'Nabago', 'Pinatilan', 'Poblacion', 
+        'San Carlos', 'San Isidro', 'Sinabuagan', 'Sinayawan', 'Sugod', 
+        'Tongantongan', 'Tugaya', 'Vintar'
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Autoloaded Service Providers
+    |--------------------------------------------------------------------------
+    */
+
 ];

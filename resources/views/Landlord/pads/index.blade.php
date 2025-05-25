@@ -6,7 +6,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Pad Management</h2>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPadModal">
-            Add New Pad
+            Create New Pad
         </button>
     </div>
     <div class="row align-items-end mb-3">
@@ -22,11 +22,8 @@
                         <div class="col-md-4">
                             <select name="location_filter" class="form-select" onchange="this.form.submit()">
                                 <option value="">All Locations</option>
-                                @foreach($pads->pluck('padLocation')->map(function($loc) {
-                                    $parts = explode(',', $loc);
-                                    return isset($parts[2]) ? trim($parts[2]) : trim($loc);
-                                })->unique()->sort() as $city)
-                                    <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
+                                @foreach(config('app.valencia_barangays') as $barangay)
+                                    <option value="{{ $barangay }}" {{ request('location_filter') == $barangay ? 'selected' : '' }}>{{ $barangay }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -47,56 +44,56 @@
             </div>
 
     <div class="row" id="pad-list">
-        @foreach ($pads as $pad)
-            <div class="col-md-3 mb-4" id="pad-card-{{ $pad->padID }}">
-                <div class="card h-100 d-flex flex-column shadow-sm">
-                    <a href="{{ route('landlord.pads.show', $pad->padID) }}" style="text-decoration: none; color: inherit;">
-                        @if ($pad->padImage)
-                            <img src="{{ asset('storage/' . $pad->padImage) }}" class="card-img-top"
-                                style="height: 160px; object-fit: cover;">
+    @foreach ($pads as $pad)
+        <div class="col-md-3 mb-4" id="pad-card-{{ $pad->padID }}">
+            <div class="card h-100 d-flex flex-column shadow-sm">
+                <a href="{{ route('landlord.pads.show', $pad->padID) }}" style="text-decoration: none; color: inherit;">
+                    @if ($pad->main_image)
+                        <img src="{{ asset('storage/' . $pad->main_image) }}" class="card-img-top"
+                            style="height: 160px; object-fit: cover;">
+                    @else
+                        <img src="https://via.placeholder.com/300x160?text=No+Image" class="card-img-top"
+                            style="height: 160px; object-fit: cover;">
+                    @endif
+                    <div class="card-body flex-grow-1">
+                        <h5 class="card-title">{{ $pad->padName }}</h5>
+                        <p class="card-text">{{ $pad->padLocation }}</p>
+                        <p class="card-text text-muted mb-1">₱{{ number_format($pad->padRent, 2) }}</p>
+                        @php
+                            $statusDisplay = [
+                                'Available' => 'Available',
+                                'Fullyoccupied' => 'Fully Occupied',
+                                'Maintenance' => 'Maintenance'
+                            ];
+                        @endphp
+                        <p class="card-text text-muted mb-1">Status: 
+                            {{ $statusDisplay[$pad->padStatus] ?? $pad->padStatus }}
+                        </p>
+                        @if ($pad->number_of_boarders >= $pad->vacancy)
+                            <p class="card-text text-muted mb-1"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }} (Fully Occupied)</p>
                         @else
-                            <img src="https://via.placeholder.com/300x160?text=No+Image" class="card-img-top"
-                                style="height: 160px; object-fit: cover;">
+                            <p class="card-text text-muted mb-1"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
                         @endif
-                        <div class="card-body flex-grow-1">
-                            <h5 class="card-title">{{ $pad->padName }}</h5>
-                            <p class="card-text">{{ $pad->padLocation }}</p>
-                            <p class="card-text text-muted mb-1">₱{{ number_format($pad->padRent, 2) }}</p>
-                            @php
-                                $statusDisplay = [
-                                    'Available' => 'Available',
-                                    'Fullyoccupied' => 'Fully Occupied',
-                                    'Maintenance' => 'Maintenance'
-                                ];
-                            @endphp
-                            <p class="card-text text-muted mb-1">Status: 
-                                {{ $statusDisplay[$pad->padStatus] ?? $pad->padStatus }}
-                            </p>
-                            @if ($pad->number_of_boarders >= $pad->vacancy)
-                                <p class="card-text text-muted mb-1"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }} (Fully Occupied)</p>
-                            @else
-                                <p class="card-text text-muted mb-1"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
-                            @endif
-                        </div>
-                    </a>
-                    <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mt-auto">
-                        <button class="btn btn-warning btn-sm editPadBtn" data-id="{{ $pad->padID }}"
-                            data-name="{{ $pad->padName }}" data-description="{{ $pad->padDescription }}"
-                            data-location="{{ $pad->padLocation }}" data-rent="{{ $pad->padRent }}"
-                            data-status="{{ $pad->padStatus }}" data-latitude="{{ $pad->latitude }}"
-                            data-longitude="{{ $pad->longitude }}" data-bs-toggle="modal" data-bs-target="#editPadModal"
-                            style="color:#000;">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-danger btn-sm deletePadBtn" data-id="{{ $pad->padID }}"
-                            data-name="{{ $pad->padName }}" data-bs-toggle="modal" data-bs-target="#deletePadModal"
-                            style="color:#fff;">
-                            <i class="fas fa-trash"></i>
-                        </button>
                     </div>
+                </a>
+                <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mt-auto">
+                    <button class="btn btn-warning btn-sm editPadBtn" data-id="{{ $pad->padID }}"
+                        data-name="{{ $pad->padName }}" data-description="{{ $pad->padDescription }}"
+                        data-location="{{ $pad->padLocation }}" data-rent="{{ $pad->padRent }}"
+                        data-status="{{ $pad->padStatus }}" data-latitude="{{ $pad->latitude }}"
+                        data-longitude="{{ $pad->longitude }}" data-bs-toggle="modal" data-bs-target="#editPadModal"
+                        style="color:#000;">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm deletePadBtn" data-id="{{ $pad->padID }}"
+                        data-name="{{ $pad->padName }}" data-bs-toggle="modal" data-bs-target="#deletePadModal"
+                        style="color:#fff;">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </div>
-        @endforeach
+        </div>
+    @endforeach
     </div>
 
     @if ($pads->isEmpty())
@@ -107,6 +104,12 @@
 
     <div class="mt-3">
         {{ $pads->links('pagination::bootstrap-5') }}
+    </div>
+
+    <!-- Map Section -->
+    <div class="mt-5">
+        <h3 class="text-center mb-4">Pads Map</h3>
+        <div id="padsMap" style="height: 500px; width: 100%; border-radius: 10px;"></div>
     </div>
 
     <!-- Create Pad Modal -->
@@ -155,8 +158,18 @@
                                 <input type="hidden" name="padStatus" id="createPadStatus" value="Available">
                             </div>
                             <div class="mb-3">
-                                <label>Image</label>
-                                <input type="file" name="padImage" class="form-control">
+                                <label>Images (Max 3)</label>
+                                
+                                <!-- Image Preview Container for Create -->
+                                <div id="imagePreviewContainerCreate" class="mb-3">
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <!-- Will be populated by JavaScript when images are selected -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Add Images -->
+                                <input type="file" name="padImages[]" id="imageInputCreate" class="form-control" multiple accept="image/*" max="3">
+                                <small class="form-text text-muted">You can select up to 3 images. The first image will be the main image.</small>
                             </div>
                         </div>
                     </div>
@@ -199,6 +212,7 @@
                         {{-- Step 2: Form --}}
                         <div id="formStepEdit" style="display: none;">
                             <input type="hidden" name="padID" id="editPadId">
+                            <input type="hidden" name="redirect_to" value="index">
                             <div class="mb-3">
                                 <label>Name</label>
                                 <input type="text" name="padName" id="editPadName" class="form-control" required>
@@ -221,8 +235,21 @@
                                 <input type="hidden" name="padStatus" id="editPadStatus">
                             </div>
                             <div class="mb-3">
-                                <label>Image</label>
-                                <input type="file" name="padImage" class="form-control">
+                                <label>Images (Max 3)</label>
+                                
+                                <!-- Current Images Display -->
+                                <div id="currentImagesEdit" class="mb-3">
+                                    <div class="d-flex gap-2 flex-wrap" id="imagePreviewContainer">
+                                        <!-- Will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Add Images -->
+                                <input type="file" name="padImages[]" id="imageInput" class="form-control" multiple accept="image/*" max="3">
+                                <small class="form-text text-muted">You can select up to 3 images. The first image will be the main image.</small>
+                                
+                                <!-- Hidden inputs for removed images -->
+                                <div id="removedImagesInputs"></div>
                             </div>
 
                         </div>
@@ -302,13 +329,13 @@
             if (createPadModal) {
                 createPadModal.addEventListener('shown.bs.modal', function () {
                     if (!map) {
-                        const defaultLatLng = [7.9092, 125.0949];
+                        const defaultLatLng = [7.9042, 125.0928];
                         map = L.map('map', {
                             zoomControl: true,
                             zoomControlOptions: {
                                 position: 'topright'
                             }
-                        }).setView(defaultLatLng, 14);
+                        }).setView(defaultLatLng, 15);
 
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                             attribution: '© OpenStreetMap contributors'
@@ -317,19 +344,18 @@
                         // Add custom reset control
                         L.Control.ResetView = L.Control.extend({
                             onAdd: function(map) {
-                                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                                container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
-                                container.style.backgroundColor = 'white';
-                                container.style.width = '30px';
-                                container.style.height = '30px';
-                                container.style.display = 'flex';
-                                container.style.alignItems = 'center';
-                                container.style.justifyContent = 'center';
+                                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                                const link = L.DomUtil.create('a', 'leaflet-control-zoom-reset', container);
+                                link.innerHTML = '⌂';
+                                link.href = '#';
+                                link.title = 'Reset View';
+                                link.setAttribute('role', 'button');
+                                link.setAttribute('aria-label', 'Reset View');
                                 
-                                container.onclick = function(e) {
-                                    e.preventDefault();
-                                    map.setView(defaultLatLng, 14);
-                                }
+                                L.DomEvent.on(link, 'click', function(e) {
+                                    L.DomEvent.preventDefault(e);
+                                    map.setView(defaultLatLng, 15);
+                                });
                                 
                                 return container;
                             },
@@ -346,7 +372,7 @@
                         })
                             .on('markgeocode', function (e) {
                                 const center = e.geocode.center;
-                                map.setView(center, 16);
+                                map.setView(center, 15);
 
                                 if (marker) map.removeLayer(marker);
                                 marker = L.marker(center).addTo(map);
@@ -407,16 +433,16 @@
 
             // Cancel button for New Pad
             cancelCreateBtn.addEventListener('click', function () {
-                // Reset map markers & view
-                if (typeof map !== 'undefined') {
-                    map.eachLayer(function (layer) {
-                        if (layer instanceof L.Marker) {
-                            map.removeLayer(layer);
-                        }
-                    });
-                    const defaultLatLng = [7.9092, 125.0949];
-                    map.setView(defaultLatLng, 14);
-                }
+                                    // Reset map markers & view
+                    if (typeof map !== 'undefined') {
+                        map.eachLayer(function (layer) {
+                            if (layer instanceof L.Marker) {
+                                map.removeLayer(layer);
+                            }
+                        });
+                        const defaultLatLng = [7.9042, 125.0928];
+                        map.setView(defaultLatLng, 15);
+                    }
 
                 // Reset form fields (including hidden latitude, longitude, location input)
                 document.getElementById('latitude').value = '';
@@ -426,6 +452,12 @@
                 // Reset status fields to default
                 document.getElementById('createPadStatusDisplay').value = 'Available';
                 document.getElementById('createPadStatus').value = 'Available';
+
+                // Clear image previews for create modal
+                const imagePreviewContainerCreate = document.getElementById('imagePreviewContainerCreate');
+                if (imagePreviewContainerCreate) {
+                    imagePreviewContainerCreate.innerHTML = '<div class="d-flex gap-2 flex-wrap"></div>';
+                }
 
                 // Reset the whole form
                 const form = createPadModal.querySelector('form');
@@ -497,7 +529,7 @@
                         zoomControlOptions: {
                             position: 'topright'
                         }
-                    }).setView([lat, lng], 14);
+                                            }).setView([lat, lng], 15);
 
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
@@ -506,19 +538,18 @@
                     // Add custom reset control
                     L.Control.ResetView = L.Control.extend({
                         onAdd: function(map) {
-                            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                            container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
-                            container.style.backgroundColor = 'white';
-                            container.style.width = '30px';
-                            container.style.height = '30px';
-                            container.style.display = 'flex';
-                            container.style.alignItems = 'center';
-                            container.style.justifyContent = 'center';
+                            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                            const link = L.DomUtil.create('a', 'leaflet-control-zoom-reset', container);
+                            link.innerHTML = '⌂';
+                            link.href = '#';
+                            link.title = 'Reset View';
+                            link.setAttribute('role', 'button');
+                            link.setAttribute('aria-label', 'Reset View');
                             
-                            container.onclick = function(e) {
-                                e.preventDefault();
-                                map.setView([7.9092, 125.0949], 14);
-                            }
+                            L.DomEvent.on(link, 'click', function(e) {
+                                L.DomEvent.preventDefault(e);
+                                map.setView([7.9042, 125.0928], 15);
+                            });
                             
                             return container;
                         },
@@ -535,7 +566,7 @@
                     })
                         .on('markgeocode', function (e) {
                             const center = e.geocode.center;
-                            editMap.setView(center, 16);
+                            editMap.setView(center, 15);
                             if (editMarker) editMap.removeLayer(editMarker);
                             editMarker = L.marker(center).addTo(editMap);
                             document.getElementById('editLatitude').value = center.lat;
@@ -553,11 +584,57 @@
                         reverseGeocode(e.latlng.lat, e.latlng.lng, 'editPadLocation');
                     });
                 } else {
-                    editMap.setView([lat, lng], 14);
+                    editMap.setView([lat, lng], 15);
                     if (editMarker) editMap.removeLayer(editMarker);
                     editMarker = L.marker([lat, lng]).addTo(editMap);
                 }
                 editMap.invalidateSize();
+            }
+
+            // Function to load current images for editing
+            function loadCurrentImages(padId) {
+                // Fetch current images from the server
+                fetch(`/landlord/pads/${padId}/images`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+                        imagePreviewContainer.innerHTML = '';
+                        
+                        if (data.images && data.images.length > 0) {
+                            data.images.forEach((image, index) => {
+                                const imageDiv = document.createElement('div');
+                                imageDiv.className = 'position-relative';
+                                imageDiv.style.cssText = 'width: 100px; height: 100px;';
+                                imageDiv.innerHTML = `
+                                    <img src="/storage/${image}" class="img-fluid rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle" 
+                                            style="width: 25px; height: 25px; padding: 0; font-size: 12px; transform: translate(50%, -50%);"
+                                            onclick="removeImage(${index}, '${image}')">
+                                        ×
+                                    </button>
+                                    ${index === 0 ? '<small class="position-absolute bottom-0 start-0 bg-primary text-white px-1 rounded" style="font-size: 10px;">Main</small>' : ''}
+                                `;
+                                imagePreviewContainer.appendChild(imageDiv);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading images:', error);
+                    });
+            }
+
+            // Function to remove image
+            window.removeImage = function(index, imagePath) {
+                // Add hidden input to track removed images
+                const removedImagesContainer = document.getElementById('removedImagesInputs');
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'removed_images[]';
+                hiddenInput.value = imagePath;
+                removedImagesContainer.appendChild(hiddenInput);
+                
+                // Remove the image preview
+                event.target.parentElement.remove();
             }
 
             // When clicking edit buttons
@@ -595,6 +672,9 @@
                         document.getElementById('editPadStatusDisplay').value = 'Available';
                         document.getElementById('editPadStatus').value = 'Available';
                     }
+
+                    // Load current images
+                    loadCurrentImages(this.dataset.id);
 
                     const lat = parseFloat(this.dataset.latitude) || 7.9092;
                     const lng = parseFloat(this.dataset.longitude) || 125.0949;
@@ -702,10 +782,320 @@
             }
 
         });
+
+        // Handle image input preview for edit modal
+        const imageInput = document.getElementById('imageInput');
+        if (imageInput) {
+            imageInput.addEventListener('change', function(e) {
+                const files = Array.from(e.target.files);
+                const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+                
+                // Count existing images (not new previews)
+                const existingImages = imagePreviewContainer.querySelectorAll('div:not(.new-image-preview)').length;
+                
+                // Check if total would exceed 3
+                if (existingImages + files.length > 3) {
+                    showImageLimitModal(existingImages, files.length);
+                    e.target.value = ''; // Clear the file input
+                    return;
+                }
+                
+                // Clear existing previews of new files
+                const existingPreviews = imagePreviewContainer.querySelectorAll('.new-image-preview');
+                existingPreviews.forEach(preview => preview.remove());
+                
+                files.forEach((file, index) => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const imageDiv = document.createElement('div');
+                            imageDiv.className = 'position-relative new-image-preview';
+                            imageDiv.style.cssText = 'width: 100px; height: 100px;';
+                            imageDiv.innerHTML = `
+                                <img src="${e.target.result}" class="img-fluid rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle" 
+                                        style="width: 25px; height: 25px; padding: 0; font-size: 12px; transform: translate(50%, -50%);"
+                                        onclick="removeNewImage(this)">
+                                    ×
+                                </button>
+                                <small class="position-absolute bottom-0 start-0 bg-success text-white px-1 rounded" style="font-size: 10px;">New</small>
+                            `;
+                            imagePreviewContainer.appendChild(imageDiv);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
+        }
+
+        // Handle image input preview for create modal
+        const imageInputCreate = document.getElementById('imageInputCreate');
+        if (imageInputCreate) {
+            imageInputCreate.addEventListener('change', function(e) {
+                const files = Array.from(e.target.files);
+                const imagePreviewContainer = document.getElementById('imagePreviewContainerCreate');
+                
+                // Check if total would exceed 3
+                if (files.length > 3) {
+                    showImageLimitModal(0, files.length);
+                    e.target.value = ''; // Clear the file input
+                    return;
+                }
+                
+                // Clear existing previews
+                imagePreviewContainer.innerHTML = '<div class="d-flex gap-2 flex-wrap"></div>';
+                const flexContainer = imagePreviewContainer.querySelector('.d-flex');
+                
+                files.forEach((file, index) => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const imageDiv = document.createElement('div');
+                            imageDiv.className = 'position-relative new-image-preview';
+                            imageDiv.style.cssText = 'width: 100px; height: 100px;';
+                            imageDiv.innerHTML = `
+                                <img src="${e.target.result}" class="img-fluid rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle" 
+                                        style="width: 25px; height: 25px; padding: 0; font-size: 12px; transform: translate(50%, -50%);"
+                                        onclick="removeNewImageCreate(this)">
+                                    ×
+                                </button>
+                            `;
+                            flexContainer.appendChild(imageDiv);
+                            
+                            // Update badges after adding image
+                            updateImageBadgesCreate();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
+        }
+
+        // Function to remove new image preview
+        window.removeNewImage = function(button) {
+            button.parentElement.remove();
+            // Reset file input
+            document.getElementById('imageInput').value = '';
+        }
+
+        // Function to remove new image preview for create modal
+        window.removeNewImageCreate = function(button) {
+            button.parentElement.remove();
+            // Reset file input
+            document.getElementById('imageInputCreate').value = '';
+        }
+
+        // Function to make image main for create modal
+        window.makeMainImageCreate = function(clickedImage) {
+            const container = document.getElementById('imagePreviewContainerCreate').querySelector('.d-flex');
+            const allImages = Array.from(container.querySelectorAll('.new-image-preview'));
+            
+            // Find the clicked image index
+            const clickedIndex = allImages.indexOf(clickedImage);
+            
+            if (clickedIndex > 0) {
+                // Remove clicked image from its current position
+                const imageToMove = allImages[clickedIndex];
+                container.removeChild(imageToMove);
+                
+                // Insert it at the beginning
+                container.insertBefore(imageToMove, container.firstChild);
+                
+                // Update all badges
+                updateImageBadgesCreate();
+            }
+        }
+
+        // Function to update image badges for create modal
+        function updateImageBadgesCreate() {
+            const container = document.getElementById('imagePreviewContainerCreate').querySelector('.d-flex');
+            const allImages = container.querySelectorAll('.new-image-preview');
+            
+            allImages.forEach((imageDiv, index) => {
+                // Remove existing badge
+                const existingBadge = imageDiv.querySelector('small');
+                if (existingBadge) {
+                    existingBadge.remove();
+                }
+                
+                // Add new badge
+                if (index === 0) {
+                    const mainBadge = document.createElement('small');
+                    mainBadge.className = 'position-absolute bottom-0 start-0 bg-primary text-white px-1 rounded';
+                    mainBadge.style.fontSize = '10px';
+                    mainBadge.style.cursor = 'pointer';
+                    mainBadge.textContent = 'Main';
+                    mainBadge.onclick = function() { makeMainImageCreate(imageDiv); };
+                    imageDiv.appendChild(mainBadge);
+                } else {
+                    const numberBadge = document.createElement('small');
+                    numberBadge.className = 'position-absolute bottom-0 start-0 bg-secondary text-white px-1 rounded';
+                    numberBadge.style.fontSize = '10px';
+                    numberBadge.style.cursor = 'pointer';
+                    numberBadge.textContent = index + 1;
+                    numberBadge.onclick = function() { makeMainImageCreate(imageDiv); };
+                    imageDiv.appendChild(numberBadge);
+                }
+            });
+        }
+
+        // Function to show image limit modal
+        function showImageLimitModal(existingCount, selectedCount) {
+            const modalHtml = `
+                <div class="modal fade" id="imageLimitModal" tabindex="-1" aria-labelledby="imageLimitModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-warning text-white border-0">
+                                <h6 class="modal-title" id="imageLimitModalLabel">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Image Limit Exceeded
+                                </h6>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center py-3">
+                                <p class="mb-0">Maximum of 3 images allowed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('imageLimitModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('imageLimitModal'));
+            modal.show();
+            
+            // Remove modal from DOM after it's hidden
+            document.getElementById('imageLimitModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        }
+
+        // Initialize the map automatically on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the map with enhanced controls
+            const padsMap = L.map('padsMap', {
+                zoomControl: true,
+                zoomControlOptions: {
+                    position: 'topright'
+                }
+            }).setView([7.9042, 125.0928], 15);
+
+            // Add the tile layer (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(padsMap);
+
+            // Add custom reset control
+            L.Control.ResetView = L.Control.extend({
+                onAdd: function(map) {
+                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    const link = L.DomUtil.create('a', 'leaflet-control-zoom-reset', container);
+                    link.innerHTML = '⌂';
+                    link.href = '#';
+                    link.title = 'Reset View';
+                    link.setAttribute('role', 'button');
+                    link.setAttribute('aria-label', 'Reset View');
+                    
+                    L.DomEvent.on(link, 'click', function(e) {
+                        L.DomEvent.preventDefault(e);
+                        padsMap.setView([7.9042, 125.0928], 15);
+                    });
+                    
+                    return container;
+                },
+                onRemove: function(map) {}
+            });
+
+            // Add reset control to map
+            new L.Control.ResetView({ position: 'topleft' }).addTo(padsMap);
+
+            // Add geocoder control for searching locations
+            L.Control.geocoder({
+                defaultMarkGeocode: false,
+                position: 'topright'
+            })
+                .on('markgeocode', function (e) {
+                    const center = e.geocode.center;
+                    padsMap.setView(center, 15);
+                })
+                .addTo(padsMap);
+
+            // Add markers for each pad
+            @foreach($pads as $pad)
+                @if($pad->latitude && $pad->longitude)
+                    const marker{{ $pad->padID }} = L.marker([{{ $pad->latitude }}, {{ $pad->longitude }}]).addTo(padsMap);
+                    const popupContent{{ $pad->padID }} = `
+                        <div style="min-width: 200px;">
+                            <h5 style="margin-bottom: 8px; color: #333;">{{ $pad->padName }}</h5>
+                            <p style="margin-bottom: 5px;"><strong>Location:</strong> {{ $pad->padLocation }}</p>
+                            <p style="margin-bottom: 5px;"><strong>Rent:</strong> ₱{{ number_format($pad->padRent, 2) }}</p>
+                            @php
+                                $statusDisplay = [
+                                    'Available' => 'Available',
+                                    'Fullyoccupied' => 'Fully Occupied',
+                                    'Maintenance' => 'Maintenance'
+                                ];
+                            @endphp
+                            <p style="margin-bottom: 10px;"><strong>Status:</strong> {{ $statusDisplay[$pad->padStatus] ?? $pad->padStatus }}</p>
+                            <a href="{{ route('landlord.pads.show', $pad->padID) }}" class="btn btn-primary btn-sm" target="_blank">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </a>
+                        </div>
+                    `;
+                    marker{{ $pad->padID }}.bindPopup(popupContent{{ $pad->padID }});
+                @endif
+            @endforeach
+
+            // Keep the map centered on Valencia City instead of auto-fitting to all markers
+        });
     </script>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+
+    <style>
+        #padsMap {
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .leaflet-popup-content {
+            margin: 10px;
+        }
+        .leaflet-popup-content h5 {
+            margin-bottom: 5px;
+        }
+        .leaflet-popup-content p {
+            margin-bottom: 5px;
+        }
+        .card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .leaflet-control-zoom-reset {
+            font-size: 18px;
+            line-height: 26px;
+            text-align: center;
+            text-decoration: none;
+            color: black;
+            display: block;
+            width: 26px;
+            height: 26px;
+        }
+        .leaflet-control-zoom-reset:hover {
+            background-color: #f4f4f4;
+            color: black;
+        }
+    </style>
 @endsection

@@ -43,8 +43,8 @@ class PadController extends Controller
 
         // Add location filter
         if ($request->filled('location_filter')) {
-            $city = $request->input('location_filter');
-            $query->where('padLocation', 'like', "%$city%");
+            $barangay = $request->input('location_filter');
+            $query->where('padLocation', 'like', "%$barangay%");
         }
 
         // Add price range filter
@@ -78,7 +78,8 @@ class PadController extends Controller
             'padRent' => 'required|numeric',
             'vacancy' => 'required|numeric',
             'padStatus' => 'required|in:Available,Fullyoccupied,Maintenance',
-            'padImage' => 'nullable|image',
+            'padImages' => 'nullable|array|max:3',
+            'padImages.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
         ]);
@@ -98,8 +99,13 @@ class PadController extends Controller
         $data['padCreatedAt'] = now();
         $data['padUpdatedAt'] = now();
 
-        if ($request->hasFile('padImage')) {
-            $data['padImage'] = $request->file('padImage')->store('pads', 'public');
+        // Handle multiple images
+        if ($request->hasFile('padImages')) {
+            $imagePaths = [];
+            foreach ($request->file('padImages') as $image) {
+                $imagePaths[] = $image->store('pads', 'public');
+            }
+            $data['pad_images'] = $imagePaths;
         }
 
         $pad = Pad::create($data);
@@ -124,7 +130,9 @@ class PadController extends Controller
             'padRent' => 'required|numeric',
             'vacancy' => 'required|numeric',
             'padStatus' => 'required|in:Available,Fullyoccupied,Maintenance',
-            'padImage' => 'nullable|image',
+            'padImages' => 'nullable|array|max:3',
+            'padImages.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'removed_images' => 'nullable|array',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
         ]);
@@ -142,8 +150,40 @@ class PadController extends Controller
 
         $data['padUpdatedAt'] = now();
 
-        if ($request->hasFile('padImage')) {
-            $data['padImage'] = $request->file('padImage')->store('pads', 'public');
+        // Handle image updates
+        $currentImages = $pad->pad_images ?? [];
+        
+        // Handle removed images
+        if ($request->has('removed_images')) {
+            $removedImages = $request->input('removed_images');
+            foreach ($removedImages as $removedImage) {
+                // Remove from current images array
+                $currentImages = array_filter($currentImages, function($image) use ($removedImage) {
+                    return $image !== $removedImage;
+                });
+                
+                // Delete the physical file
+                $imagePath = storage_path('app/public/' . $removedImage);
+                if (file_exists($imagePath)) {
+                    unlink($imagePath);
+                }
+            }
+            // Reindex array
+            $currentImages = array_values($currentImages);
+        }
+        
+        // Handle new images
+        if ($request->hasFile('padImages')) {
+            $newImagePaths = [];
+            foreach ($request->file('padImages') as $image) {
+                $newImagePaths[] = $image->store('pads', 'public');
+            }
+            
+            // Merge current images with new images (up to 3 total)
+            $allImages = array_merge($currentImages, $newImagePaths);
+            $data['pad_images'] = array_slice($allImages, 0, 3);
+        } else {
+            $data['pad_images'] = $currentImages;
         }
 
         $pad->update($data);
@@ -153,7 +193,12 @@ class PadController extends Controller
 
         $this->logActivity('update_pad', "Updated pad: {$pad->padName}");
 
-        return redirect()->route('landlord.pads.index')->with('success', 'Pad updated successfully!');
+        // Check redirect_to parameter to determine where to redirect
+        if ($request->input('redirect_to') === 'index') {
+            return redirect()->route('landlord.pads.index')->with('success', 'Pad updated successfully!');
+        } else {
+            return redirect()->route('landlord.pads.show', $pad->padID)->with('success', 'Pad updated successfully!');
+        }
     }
 
 
@@ -204,8 +249,8 @@ class PadController extends Controller
 
         // Add location filter
         if ($request->filled('location_filter')) {
-            $city = $request->input('location_filter');
-            $query->where('padLocation', 'like', "%$city%");
+            $barangay = $request->input('location_filter');
+            $query->where('padLocation', 'like', "%$barangay%");
         }
 
         // Add price range filter
@@ -241,7 +286,8 @@ class PadController extends Controller
             'vacancy' => 'required|numeric|min:0',
             'padStatus' => 'required|in:Available,Fullyoccupied,Maintenance',
             'userID' => 'required|exists:users,id',
-            'padImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'padImages' => 'nullable|array|max:3',
+            'padImages.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
         ]);
@@ -268,8 +314,13 @@ class PadController extends Controller
         $data['padCreatedAt'] = now();
         $data['padUpdatedAt'] = now();
 
-        if ($request->hasFile('padImage')) {
-            $data['padImage'] = $request->file('padImage')->store('pads', 'public');
+        // Handle multiple images
+        if ($request->hasFile('padImages')) {
+            $imagePaths = [];
+            foreach ($request->file('padImages') as $image) {
+                $imagePaths[] = $image->store('pads', 'public');
+            }
+            $data['pad_images'] = $imagePaths;
         }
 
         $pad = Pad::create($data);
@@ -294,7 +345,9 @@ class PadController extends Controller
             'vacancy' => 'required|numeric|min:0',
             'padStatus' => 'required|in:Available,Fullyoccupied,Maintenance',
             'userID' => 'required|exists:users,id',
-            'padImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'padImages' => 'nullable|array|max:3',
+            'padImages.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'removed_images' => 'nullable|array',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
         ]);
@@ -320,8 +373,40 @@ class PadController extends Controller
         ]);
         $data['padUpdatedAt'] = now();
 
-        if ($request->hasFile('padImage')) {
-            $data['padImage'] = $request->file('padImage')->store('pads', 'public');
+        // Handle image updates
+        $currentImages = $pad->pad_images ?? [];
+        
+        // Handle removed images
+        if ($request->has('removed_images')) {
+            $removedImages = $request->input('removed_images');
+            foreach ($removedImages as $removedImage) {
+                // Remove from current images array
+                $currentImages = array_filter($currentImages, function($image) use ($removedImage) {
+                    return $image !== $removedImage;
+                });
+                
+                // Delete the physical file
+                $imagePath = storage_path('app/public/' . $removedImage);
+                if (file_exists($imagePath)) {
+                    unlink($imagePath);
+                }
+            }
+            // Reindex array
+            $currentImages = array_values($currentImages);
+        }
+        
+        // Handle new images
+        if ($request->hasFile('padImages')) {
+            $newImagePaths = [];
+            foreach ($request->file('padImages') as $image) {
+                $newImagePaths[] = $image->store('pads', 'public');
+            }
+            
+            // Merge current images with new images (up to 3 total)
+            $allImages = array_merge($currentImages, $newImagePaths);
+            $data['pad_images'] = array_slice($allImages, 0, 3);
+        } else {
+            $data['pad_images'] = $currentImages;
         }
 
         $pad->update($data);
@@ -331,7 +416,12 @@ class PadController extends Controller
 
         $this->logActivity('admin_update_pad', "Admin updated pad: {$pad->padName}");
 
-        return redirect()->route('admin.pads.index')->with('success', 'Pad updated successfully!');
+        // Check redirect_to parameter to determine where to redirect
+        if ($request->input('redirect_to') === 'index') {
+            return redirect()->route('admin.pads.index')->with('success', 'Pad updated successfully!');
+        } else {
+            return redirect()->route('admin.pads.show', $pad->padID)->with('success', 'Pad updated successfully!');
+        }
     }
 
 
@@ -380,8 +470,8 @@ class PadController extends Controller
 
         // Location filter
         if ($request->filled('location_filter')) {
-            $city = $request->input('location_filter');
-            $query->where('padLocation', 'like', "%$city%");
+            $barangay = $request->input('location_filter');
+            $query->where('padLocation', 'like', "%$barangay%");
         }
 
         // Price range filter
@@ -826,6 +916,26 @@ class PadController extends Controller
         }
         $boarders = $query->orderBy('created_at', 'desc')->get();
         return Excel::download(new LandlordBoardersExport($boarders), 'boarders.xlsx');
+    }
+
+    // API endpoint to get pad images for editing
+    public function getPadImages($id)
+    {
+        $pad = Pad::where('padID', $id)->where('userID', auth()->id())->firstOrFail();
+        
+        return response()->json([
+            'images' => $pad->all_images ?? []
+        ]);
+    }
+
+    // Admin API endpoint to get pad images for editing
+    public function adminGetPadImages($id)
+    {
+        $pad = Pad::findOrFail($id);
+        
+        return response()->json([
+            'images' => $pad->all_images ?? []
+        ]);
     }
 
 }

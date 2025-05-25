@@ -44,11 +44,8 @@
                         <div class="col-md-3">
                             <select name="location_filter" class="form-select" onchange="this.form.submit()">
                                 <option value="">All Locations</option>
-                                @foreach($pads->pluck('padLocation')->map(function($loc) {
-                                    $parts = explode(',', $loc);
-                                    return isset($parts[2]) ? trim($parts[2]) : trim($loc);
-                                })->unique()->sort() as $city)
-                                    <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
+                                @foreach(config('app.valencia_barangays') as $barangay)
+                                    <option value="{{ $barangay }}" {{ request('location_filter') == $barangay ? 'selected' : '' }}>{{ $barangay }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -71,8 +68,8 @@
                         <div class="col-md-4 mb-4">
                             <a href="{{ route('guest.pads.show', ['pad' => $pad->padID]) }}" style="text-decoration: none; color: inherit;">
                                 <div class="card h-100 shadow-sm">
-                                    @if($pad->padImage)
-                                        <img src="{{ asset('storage/' . $pad->padImage) }}" class="card-img-top pad-img" alt="{{ $pad->padName }}">
+                                    @if($pad->main_image)
+                                        <img src="{{ asset('storage/' . $pad->main_image) }}" class="card-img-top pad-img" alt="{{ $pad->padName }}">
                                     @else
                                         <img src="https://via.placeholder.com/400x200?text=No+Image" class="card-img-top pad-img" alt="No Image">
                                     @endif
@@ -173,6 +170,20 @@
             width: 100% !important;
         }
     }
+    .leaflet-control-zoom-reset {
+        font-size: 18px;
+        line-height: 26px;
+        text-align: center;
+        text-decoration: none;
+        color: black;
+        display: block;
+        width: 26px;
+        height: 26px;
+    }
+    .leaflet-control-zoom-reset:hover {
+        background-color: #f4f4f4;
+        color: black;
+    }
 </style>
 @endpush
 
@@ -188,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         zoomControlOptions: {
             position: 'topright'
         }
-    }).setView([7.9092, 125.0949], 15);
+    }).setView([7.9042, 125.0928], 15);
 
     // Add the tile layer (OpenStreetMap)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -198,19 +209,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add custom reset control
     L.Control.ResetView = L.Control.extend({
         onAdd: function(map) {
-            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-            container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
-            container.style.backgroundColor = 'white';
-            container.style.width = '30px';
-            container.style.height = '30px';
-            container.style.display = 'flex';
-            container.style.alignItems = 'center';
-            container.style.justifyContent = 'center';
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            const link = L.DomUtil.create('a', 'leaflet-control-zoom-reset', container);
+            link.innerHTML = '⌂';
+            link.href = '#';
+            link.title = 'Reset View';
+            link.setAttribute('role', 'button');
+            link.setAttribute('aria-label', 'Reset View');
             
-            container.onclick = function(e) {
-                e.preventDefault();
-                map.setView([7.9092, 125.0949], 15);
-            }
+            L.DomEvent.on(link, 'click', function(e) {
+                L.DomEvent.preventDefault(e);
+                map.setView([7.9042, 125.0928], 15);
+            });
             
             return container;
         },
@@ -225,10 +235,10 @@ document.addEventListener('DOMContentLoaded', function() {
         defaultMarkGeocode: false,
         position: 'topright'
     })
-        .on('markgeocode', function (e) {
-            const center = e.geocode.center;
-            map.setView(center, 16);
-        })
+                        .on('markgeocode', function (e) {
+                    const center = e.geocode.center;
+                    map.setView(center, 15);
+                })
         .addTo(map);
 
     // Add markers for each pad
@@ -236,16 +246,28 @@ document.addEventListener('DOMContentLoaded', function() {
         @if($pad->latitude && $pad->longitude)
             const marker{{ $pad->padID }} = L.marker([{{ $pad->latitude }}, {{ $pad->longitude }}]).addTo(map);
             const popupContent{{ $pad->padID }} = `
-                <div>
-                    <h5>{{ $pad->padName }}</h5>
-                    <p><strong>Location:</strong> {{ $pad->padLocation }}</p>
-                    <p><strong>Rent:</strong> ₱{{ number_format($pad->padRent, 2) }}</p>
-                    <a href="{{ route('guest.pads.show', $pad->padID) }}" target="_blank">View</a>
+                <div style="min-width: 200px;">
+                    <h5 style="margin-bottom: 8px; color: #333;">{{ $pad->padName }}</h5>
+                    <p style="margin-bottom: 5px;"><strong>Location:</strong> {{ $pad->padLocation }}</p>
+                    <p style="margin-bottom: 5px;"><strong>Rent:</strong> ₱{{ number_format($pad->padRent, 2) }}</p>
+                    @php
+                        $statusDisplay = [
+                            'Available' => 'Available',
+                            'Fullyoccupied' => 'Fully Occupied',
+                            'Maintenance' => 'Maintenance'
+                        ];
+                    @endphp
+                    <p style="margin-bottom: 10px;"><strong>Status:</strong> {{ $statusDisplay[$pad->padStatus] ?? $pad->padStatus }}</p>
+                    <a href="{{ route('guest.pads.show', $pad->padID) }}" class="btn btn-primary btn-sm" target="_blank">
+                        <i class="fas fa-eye me-1"></i>View Details
+                    </a>
                 </div>
             `;
             marker{{ $pad->padID }}.bindPopup(popupContent{{ $pad->padID }});
         @endif
     @endforeach
+
+            // Keep the map centered on Valencia City instead of auto-fitting to all markers
 
     // Smooth scroll for navigation
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {

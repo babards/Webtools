@@ -33,11 +33,8 @@
                 <div class="col-md-3">
                     <select name="location_filter" class="form-select" onchange="this.form.submit()">
                         <option value="">All Locations</option>
-                        @foreach($pads->pluck('padLocation')->map(function($loc) {
-                            $parts = explode(',', $loc);
-                            return isset($parts[2]) ? trim($parts[2]) : trim($loc);
-                        })->unique()->sort() as $city)
-                            <option value="{{ $city }}" {{ request('location_filter') == $city ? 'selected' : '' }}>{{ $city }}</option>
+                        @foreach(config('app.valencia_barangays') as $barangay)
+                            <option value="{{ $barangay }}" {{ request('location_filter') == $barangay ? 'selected' : '' }}>{{ $barangay }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -70,8 +67,8 @@
                 <div class="col-md-3 mb-4" id="pad-card-{{ $pad->padID }}">
                     <div class="card h-100 d-flex flex-column shadow-sm">
                         <a href="{{ route('admin.pads.show', $pad->padID) }}" style="text-decoration: none; color: inherit;">
-                            @if($pad->padImage)
-                                <img src="{{ asset('storage/' . $pad->padImage) }}" class="card-img-top"
+                            @if($pad->main_image)
+                                <img src="{{ asset('storage/' . $pad->main_image) }}" class="card-img-top"
                                     style="height: 160px; object-fit: cover;" alt="{{ $pad->padName }}">
                             @else
                                 <img src="https://via.placeholder.com/300x160?text=No+Image" class="card-img-top"
@@ -191,8 +188,18 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label>Image</label>
-                                <input type="file" name="padImage" class="form-control">
+                                <label>Images (Max 3)</label>
+                                
+                                <!-- Image Preview Container for Admin Create -->
+                                <div id="imagePreviewContainerAdminCreate" class="mb-3">
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <!-- Will be populated by JavaScript when images are selected -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Add Images -->
+                                <input type="file" name="padImages[]" id="imageInputAdminCreate" class="form-control" multiple accept="image/*" max="3">
+                                <small class="form-text text-muted">You can select up to 3 images. The first image will be the main image.</small>
                             </div>
                         </div>
                     </div>
@@ -236,6 +243,7 @@
                         {{-- Step 2: Form --}}
                         <div id="formStepEdit" style="display: none;">
                             <input type="hidden" name="padID" id="editPadId">
+                            <input type="hidden" name="redirect_to" value="index">
                             <div class="mb-3">
                                 <label>Name</label>
                                 <input type="text" name="padName" id="editPadName" class="form-control" required>
@@ -274,8 +282,21 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label>Image</label>
-                                <input type="file" name="padImage" class="form-control">
+                                <label>Images (Max 3)</label>
+                                
+                                <!-- Current Images Display -->
+                                <div id="currentImagesEditAdmin" class="mb-3">
+                                    <div class="d-flex gap-2 flex-wrap" id="imagePreviewContainerAdmin">
+                                        <!-- Will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Add Images -->
+                                <input type="file" name="padImages[]" id="imageInputAdmin" class="form-control" multiple accept="image/*" max="3">
+                                <small class="form-text text-muted">You can select up to 3 images. The first image will be the main image.</small>
+                                
+                                <!-- Hidden inputs for removed images -->
+                                <div id="removedImagesInputsAdmin"></div>
                             </div>
 
                         </div>
@@ -356,13 +377,13 @@
             if (createPadModal) {
                 createPadModal.addEventListener('shown.bs.modal', function () {
                     if (!map) {
-                        const defaultLatLng = [7.9092, 125.0949];
+                        const defaultLatLng = [7.9042, 125.0928];
                         map = L.map('map', {
                             zoomControl: true,
                             zoomControlOptions: {
                                 position: 'topright'
                             }
-                        }).setView(defaultLatLng, 14);
+                        }).setView(defaultLatLng, 15);
 
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                             attribution: '© OpenStreetMap contributors'
@@ -371,19 +392,18 @@
                         // Add custom reset control
                         L.Control.ResetView = L.Control.extend({
                             onAdd: function(map) {
-                                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                                container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
-                                container.style.backgroundColor = 'white';
-                                container.style.width = '30px';
-                                container.style.height = '30px';
-                                container.style.display = 'flex';
-                                container.style.alignItems = 'center';
-                                container.style.justifyContent = 'center';
+                                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                                const link = L.DomUtil.create('a', 'leaflet-control-zoom-reset', container);
+                                link.innerHTML = '⌂';
+                                link.href = '#';
+                                link.title = 'Reset View';
+                                link.setAttribute('role', 'button');
+                                link.setAttribute('aria-label', 'Reset View');
                                 
-                                container.onclick = function(e) {
-                                    e.preventDefault();
-                                    map.setView(defaultLatLng, 14);
-                                }
+                                L.DomEvent.on(link, 'click', function(e) {
+                                    L.DomEvent.preventDefault(e);
+                                    map.setView(defaultLatLng, 15);
+                                });
                                 
                                 return container;
                             },
@@ -400,7 +420,7 @@
                         })
                             .on('markgeocode', function (e) {
                                 const center = e.geocode.center;
-                                map.setView(center, 16);
+                                map.setView(center, 15);
 
                                 if (marker) map.removeLayer(marker);
                                 marker = L.marker(center).addTo(map);
@@ -461,16 +481,16 @@
 
             // Cancel button for New Pad
             cancelCreateBtn.addEventListener('click', function () {
-                // Reset map markers & view
-                if (typeof map !== 'undefined') {
-                    map.eachLayer(function (layer) {
-                        if (layer instanceof L.Marker) {
-                            map.removeLayer(layer);
-                        }
-                    });
-                    const defaultLatLng = [7.9092, 125.0949];
-                    map.setView(defaultLatLng, 14);
-                }
+                                    // Reset map markers & view
+                    if (typeof map !== 'undefined') {
+                        map.eachLayer(function (layer) {
+                            if (layer instanceof L.Marker) {
+                                map.removeLayer(layer);
+                            }
+                        });
+                        const defaultLatLng = [7.9042, 125.0928];
+                        map.setView(defaultLatLng, 15);
+                    }
 
                 // Reset form fields (including hidden latitude, longitude, location input)
                 document.getElementById('latitude').value = '';
@@ -480,6 +500,12 @@
                 // Reset status fields to default
                 document.getElementById('createPadStatusDisplay').value = 'Available';
                 document.getElementById('createPadStatus').value = 'Available';
+
+                // Clear image previews for admin create modal
+                const imagePreviewContainerAdminCreate = document.getElementById('imagePreviewContainerAdminCreate');
+                if (imagePreviewContainerAdminCreate) {
+                    imagePreviewContainerAdminCreate.innerHTML = '<div class="d-flex gap-2 flex-wrap"></div>';
+                }
 
                 // Reset the whole form
                 const form = createPadModal.querySelector('form');
@@ -539,7 +565,7 @@
                         zoomControlOptions: {
                             position: 'topright'
                         }
-                    }).setView([lat, lng], 14);
+                                            }).setView([lat, lng], 15);
 
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
@@ -548,19 +574,18 @@
                     // Add custom reset control
                     L.Control.ResetView = L.Control.extend({
                         onAdd: function(map) {
-                            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                            container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
-                            container.style.backgroundColor = 'white';
-                            container.style.width = '30px';
-                            container.style.height = '30px';
-                            container.style.display = 'flex';
-                            container.style.alignItems = 'center';
-                            container.style.justifyContent = 'center';
+                            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                            const link = L.DomUtil.create('a', 'leaflet-control-zoom-reset', container);
+                            link.innerHTML = '⌂';
+                            link.href = '#';
+                            link.title = 'Reset View';
+                            link.setAttribute('role', 'button');
+                            link.setAttribute('aria-label', 'Reset View');
                             
-                            container.onclick = function(e) {
-                                e.preventDefault();
-                                map.setView([7.9092, 125.0949], 14);
-                            }
+                            L.DomEvent.on(link, 'click', function(e) {
+                                L.DomEvent.preventDefault(e);
+                                map.setView([7.9042, 125.0928], 15);
+                            });
                             
                             return container;
                         },
@@ -577,7 +602,7 @@
                     })
                         .on('markgeocode', function (e) {
                             const center = e.geocode.center;
-                            editMap.setView(center, 16);
+                            editMap.setView(center, 15);
                             if (editMarker) editMap.removeLayer(editMarker);
                             editMarker = L.marker(center).addTo(editMap);
                             document.getElementById('editLatitude').value = center.lat;
@@ -596,11 +621,57 @@
                     });
                     
                 } else {
-                    editMap.setView([lat, lng], 14);
+                    editMap.setView([lat, lng], 15);
                     if (editMarker) editMap.removeLayer(editMarker);
                     editMarker = L.marker([lat, lng]).addTo(editMap);
                 }
                 editMap.invalidateSize();
+            }
+
+            // Function to load current images for admin editing
+            function loadCurrentImagesAdmin(padId) {
+                // Fetch current images from the server
+                fetch(`/admin/pads/${padId}/images`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const imagePreviewContainer = document.getElementById('imagePreviewContainerAdmin');
+                        imagePreviewContainer.innerHTML = '';
+                        
+                        if (data.images && data.images.length > 0) {
+                            data.images.forEach((image, index) => {
+                                const imageDiv = document.createElement('div');
+                                imageDiv.className = 'position-relative';
+                                imageDiv.style.cssText = 'width: 100px; height: 100px;';
+                                imageDiv.innerHTML = `
+                                    <img src="/storage/${image}" class="img-fluid rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle" 
+                                            style="width: 25px; height: 25px; padding: 0; font-size: 12px; transform: translate(50%, -50%);"
+                                            onclick="removeImageAdmin(${index}, '${image}')">
+                                        ×
+                                    </button>
+                                    ${index === 0 ? '<small class="position-absolute bottom-0 start-0 bg-primary text-white px-1 rounded" style="font-size: 10px;">Main</small>' : ''}
+                                `;
+                                imagePreviewContainer.appendChild(imageDiv);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading images:', error);
+                    });
+            }
+
+            // Function to remove image for admin
+            window.removeImageAdmin = function(index, imagePath) {
+                // Add hidden input to track removed images
+                const removedImagesContainer = document.getElementById('removedImagesInputsAdmin');
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'removed_images[]';
+                hiddenInput.value = imagePath;
+                removedImagesContainer.appendChild(hiddenInput);
+                
+                // Remove the image preview
+                event.target.parentElement.remove();
             }
 
             // When clicking edit buttons
@@ -640,6 +711,9 @@
                         document.getElementById('editPadStatusDisplay').value = 'Available';
                         document.getElementById('editPadStatus').value = 'Available';
                     }
+
+                    // Load current images
+                    loadCurrentImagesAdmin(this.dataset.id);
 
                     const lat = parseFloat(this.dataset.latitude) || 7.9092;
                     const lng = parseFloat(this.dataset.longitude) || 125.0949;
@@ -760,6 +834,202 @@
 
     });
 
+    // Handle image input preview for admin edit modal
+    const imageInputAdmin = document.getElementById('imageInputAdmin');
+    if (imageInputAdmin) {
+        imageInputAdmin.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            const imagePreviewContainer = document.getElementById('imagePreviewContainerAdmin');
+            
+            // Count existing images (not new previews)
+            const existingImages = imagePreviewContainer.querySelectorAll('div:not(.new-image-preview)').length;
+            
+            // Check if total would exceed 3
+            if (existingImages + files.length > 3) {
+                showImageLimitModal(existingImages, files.length);
+                e.target.value = ''; // Clear the file input
+                return;
+            }
+            
+            // Clear existing previews of new files
+            const existingPreviews = imagePreviewContainer.querySelectorAll('.new-image-preview');
+            existingPreviews.forEach(preview => preview.remove());
+            
+            files.forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imageDiv = document.createElement('div');
+                        imageDiv.className = 'position-relative new-image-preview';
+                        imageDiv.style.cssText = 'width: 100px; height: 100px;';
+                        imageDiv.innerHTML = `
+                            <img src="${e.target.result}" class="img-fluid rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle" 
+                                    style="width: 25px; height: 25px; padding: 0; font-size: 12px; transform: translate(50%, -50%);"
+                                    onclick="removeNewImageAdmin(this)">
+                                ×
+                            </button>
+                            <small class="position-absolute bottom-0 start-0 bg-success text-white px-1 rounded" style="font-size: 10px;">New</small>
+                        `;
+                        imagePreviewContainer.appendChild(imageDiv);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    }
+
+    // Handle image input preview for admin create modal
+    const imageInputAdminCreate = document.getElementById('imageInputAdminCreate');
+    if (imageInputAdminCreate) {
+        imageInputAdminCreate.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            const imagePreviewContainer = document.getElementById('imagePreviewContainerAdminCreate');
+            
+            // Check if total would exceed 3
+            if (files.length > 3) {
+                showImageLimitModal(0, files.length);
+                e.target.value = ''; // Clear the file input
+                return;
+            }
+            
+            // Clear existing previews
+            imagePreviewContainer.innerHTML = '<div class="d-flex gap-2 flex-wrap"></div>';
+            const flexContainer = imagePreviewContainer.querySelector('.d-flex');
+            
+                         files.forEach((file, index) => {
+                 if (file.type.startsWith('image/')) {
+                     const reader = new FileReader();
+                     reader.onload = function(e) {
+                         const imageDiv = document.createElement('div');
+                         imageDiv.className = 'position-relative new-image-preview';
+                         imageDiv.style.cssText = 'width: 100px; height: 100px;';
+                         imageDiv.innerHTML = `
+                             <img src="${e.target.result}" class="img-fluid rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                             <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle" 
+                                     style="width: 25px; height: 25px; padding: 0; font-size: 12px; transform: translate(50%, -50%);"
+                                     onclick="removeNewImageAdminCreate(this)">
+                                 ×
+                             </button>
+                         `;
+                         flexContainer.appendChild(imageDiv);
+                         
+                         // Update badges after adding image
+                         updateImageBadgesAdminCreate();
+                     };
+                     reader.readAsDataURL(file);
+                 }
+             });
+        });
+    }
+
+    // Function to remove new image preview for admin
+    window.removeNewImageAdmin = function(button) {
+        button.parentElement.remove();
+        // Reset file input
+        document.getElementById('imageInputAdmin').value = '';
+    }
+
+    // Function to remove new image preview for admin create modal
+    window.removeNewImageAdminCreate = function(button) {
+        button.parentElement.remove();
+        // Reset file input
+        document.getElementById('imageInputAdminCreate').value = '';
+    }
+
+    // Function to make image main for admin create modal
+    window.makeMainImageAdminCreate = function(clickedImage) {
+        const container = document.getElementById('imagePreviewContainerAdminCreate').querySelector('.d-flex');
+        const allImages = Array.from(container.querySelectorAll('.new-image-preview'));
+        
+        // Find the clicked image index
+        const clickedIndex = allImages.indexOf(clickedImage);
+        
+        if (clickedIndex > 0) {
+            // Remove clicked image from its current position
+            const imageToMove = allImages[clickedIndex];
+            container.removeChild(imageToMove);
+            
+            // Insert it at the beginning
+            container.insertBefore(imageToMove, container.firstChild);
+            
+            // Update all badges
+            updateImageBadgesAdminCreate();
+        }
+    }
+
+    // Function to update image badges for admin create modal
+    function updateImageBadgesAdminCreate() {
+        const container = document.getElementById('imagePreviewContainerAdminCreate').querySelector('.d-flex');
+        const allImages = container.querySelectorAll('.new-image-preview');
+        
+        allImages.forEach((imageDiv, index) => {
+            // Remove existing badge
+            const existingBadge = imageDiv.querySelector('small');
+            if (existingBadge) {
+                existingBadge.remove();
+            }
+            
+            // Add new badge
+            if (index === 0) {
+                const mainBadge = document.createElement('small');
+                mainBadge.className = 'position-absolute bottom-0 start-0 bg-primary text-white px-1 rounded';
+                mainBadge.style.fontSize = '10px';
+                mainBadge.style.cursor = 'pointer';
+                mainBadge.textContent = 'Main';
+                mainBadge.onclick = function() { makeMainImageAdminCreate(imageDiv); };
+                imageDiv.appendChild(mainBadge);
+            } else {
+                const numberBadge = document.createElement('small');
+                numberBadge.className = 'position-absolute bottom-0 start-0 bg-secondary text-white px-1 rounded';
+                numberBadge.style.fontSize = '10px';
+                numberBadge.style.cursor = 'pointer';
+                numberBadge.textContent = index + 1;
+                numberBadge.onclick = function() { makeMainImageAdminCreate(imageDiv); };
+                imageDiv.appendChild(numberBadge);
+            }
+        });
+    }
+
+    // Function to show image limit modal
+    function showImageLimitModal(existingCount, selectedCount) {
+        const modalHtml = `
+            <div class="modal fade" id="imageLimitModal" tabindex="-1" aria-labelledby="imageLimitModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-warning text-white border-0">
+                            <h6 class="modal-title" id="imageLimitModalLabel">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Image Limit Exceeded
+                            </h6>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center py-3">
+                            <p class="mb-0">Maximum of 3 images allowed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('imageLimitModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('imageLimitModal'));
+        modal.show();
+        
+        // Remove modal from DOM after it's hidden
+        document.getElementById('imageLimitModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    }
+
     </script>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -777,6 +1047,20 @@
             height: 160px;
             /* Or your preferred height */
             object-fit: cover;
+        }
+        .leaflet-control-zoom-reset {
+            font-size: 18px;
+            line-height: 26px;
+            text-align: center;
+            text-decoration: none;
+            color: black;
+            display: block;
+            width: 26px;
+            height: 26px;
+        }
+        .leaflet-control-zoom-reset:hover {
+            background-color: #f4f4f4;
+            color: black;
         }
     </style>
 @endpush

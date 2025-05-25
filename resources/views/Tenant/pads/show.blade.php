@@ -6,8 +6,33 @@
         <div class="col-lg-8">
 
             <div class="card shadow-sm mb-4">
-                @if($pad->padImage)
-                    <img src="{{ asset('storage/' . $pad->padImage) }}" class="card-img-top rounded-top" style="object-fit:cover; max-height:320px;">
+                @if($pad->all_images && count($pad->all_images) > 0)
+                    <!-- Image Gallery -->
+                    <div id="padImageCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            @foreach($pad->all_images as $index => $image)
+                                <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                                    <img src="{{ asset('storage/' . $image) }}" class="d-block w-100 rounded-top" style="object-fit:cover; max-height:320px;" alt="Pad Image {{ $index + 1 }}">
+                                </div>
+                            @endforeach
+                        </div>
+                        @if(count($pad->all_images) > 1)
+                            <button class="carousel-control-prev" type="button" data-bs-target="#padImageCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#padImageCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                            <!-- Indicators -->
+                            <div class="carousel-indicators">
+                                @foreach($pad->all_images as $index => $image)
+                                    <button type="button" data-bs-target="#padImageCarousel" data-bs-slide-to="{{ $index }}" class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" aria-label="Slide {{ $index + 1 }}"></button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                 @else
                     <img src="https://via.placeholder.com/600x320?text=No+Image" class="card-img-top rounded-top" style="object-fit:cover; max-height:320px;">
                 @endif
@@ -142,7 +167,7 @@
                 zoomControlOptions: {
                     position: 'topright'
                 }
-            }).setView([lat, lng], 16);
+            }).setView([lat, lng], 15);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
@@ -161,10 +186,10 @@
                     container.style.alignItems = 'center';
                     container.style.justifyContent = 'center';
                     
-                    container.onclick = function(e) {
-                        e.preventDefault();
-                        map.setView([lat, lng], 16);
-                    }
+                                container.onclick = function(e) {
+                e.preventDefault();
+                map.setView([lat, lng], 15);
+            }
                     
                     return container;
                 },

@@ -6,8 +6,33 @@
         <div class="col-lg-8">
 
             <div class="card shadow-sm mb-4">
-                @if($pad->padImage)
-                    <img src="{{ asset('storage/' . $pad->padImage) }}" class="card-img-top rounded-top" style="object-fit:cover; max-height:320px;">
+                @if($pad->all_images && count($pad->all_images) > 0)
+                    <!-- Image Gallery -->
+                    <div id="padImageCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            @foreach($pad->all_images as $index => $image)
+                                <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                                    <img src="{{ asset('storage/' . $image) }}" class="d-block w-100 rounded-top" style="object-fit:cover; max-height:320px;" alt="Pad Image {{ $index + 1 }}">
+                                </div>
+                            @endforeach
+                        </div>
+                        @if(count($pad->all_images) > 1)
+                            <button class="carousel-control-prev" type="button" data-bs-target="#padImageCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#padImageCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                            <!-- Indicators -->
+                            <div class="carousel-indicators">
+                                @foreach($pad->all_images as $index => $image)
+                                    <button type="button" data-bs-target="#padImageCarousel" data-bs-slide-to="{{ $index }}" class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" aria-label="Slide {{ $index + 1 }}"></button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                 @else
                     <img src="https://via.placeholder.com/600x320?text=No+Image" class="card-img-top rounded-top" style="object-fit:cover; max-height:320px;">
                 @endif
@@ -273,6 +298,7 @@
                     <!-- Step 2: Form -->
                     <div id="formStepEdit" style="display: none;">
                         <input type="hidden" name="padID" id="editPadId">
+                        <input type="hidden" name="redirect_to" value="show">
                         <div class="mb-3">
                             <label>Name</label>
                             <input type="text" name="padName" id="editPadName" class="form-control" required>
@@ -295,8 +321,21 @@
                             <input type="hidden" name="padStatus" id="editPadStatus">
                         </div>
                         <div class="mb-3">
-                            <label>Image</label>
-                            <input type="file" name="padImage" class="form-control">
+                            <label>Images (Max 3)</label>
+                            
+                            <!-- Current Images Display -->
+                            <div id="currentImagesEditShow" class="mb-3">
+                                <div class="d-flex gap-2 flex-wrap" id="imagePreviewContainerShow">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            
+                            <!-- Add Images -->
+                            <input type="file" name="padImages[]" id="imageInputShow" class="form-control" multiple accept="image/*" max="3">
+                            <small class="form-text text-muted">You can select up to 3 images. The first image will be the main image.</small>
+                            
+                            <!-- Hidden inputs for removed images -->
+                            <div id="removedImagesInputsShow"></div>
                         </div>
                     </div>
                 </div>
@@ -344,7 +383,7 @@ document.addEventListener("DOMContentLoaded", function () {
         zoomControlOptions: {
             position: 'topright'
         }
-    }).setView([lat, lng], 16);
+                }).setView([lat, lng], 15);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -365,7 +404,7 @@ document.addEventListener("DOMContentLoaded", function () {
             
             container.onclick = function(e) {
                 e.preventDefault();
-                map.setView([lat, lng], 16);
+                map.setView([lat, lng], 15);
             }
             
             return container;
@@ -416,36 +455,85 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
         }
 
-        // Show modal and pre-fill data
-        document.querySelectorAll('.editPadBtn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const id = btn.getAttribute('data-id');
-                document.getElementById('editPadForm').action = `/landlord/pads/${id}`;
-                document.getElementById('editPadId').value = id;
-                document.getElementById('editPadName').value = btn.getAttribute('data-name');
-                document.getElementById('editPadDescription').value = btn.getAttribute('data-description');
-                document.getElementById('editPadRent').value = btn.getAttribute('data-rent');
-                document.getElementById('editPadVacancy').value = btn.getAttribute('data-vacancy');
-                document.getElementById('editPadLocation').value = btn.getAttribute('data-location');
-                document.getElementById('editLatitude').value = btn.getAttribute('data-latitude');
-                document.getElementById('editLongitude').value = btn.getAttribute('data-longitude');
+                    // Function to load current images for show page editing
+            function loadCurrentImagesShow(padId) {
+                // Fetch current images from the server
+                fetch(`/landlord/pads/${padId}/images`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const imagePreviewContainer = document.getElementById('imagePreviewContainerShow');
+                        imagePreviewContainer.innerHTML = '';
+                        
+                        if (data.images && data.images.length > 0) {
+                            data.images.forEach((image, index) => {
+                                const imageDiv = document.createElement('div');
+                                imageDiv.className = 'position-relative';
+                                imageDiv.style.cssText = 'width: 100px; height: 100px;';
+                                imageDiv.innerHTML = `
+                                    <img src="/storage/${image}" class="img-fluid rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle" 
+                                            style="width: 25px; height: 25px; padding: 0; font-size: 12px; transform: translate(50%, -50%);"
+                                            onclick="removeImageShow(${index}, '${image}')">
+                                        ×
+                                    </button>
+                                    ${index === 0 ? '<small class="position-absolute bottom-0 start-0 bg-primary text-white px-1 rounded" style="font-size: 10px;">Main</small>' : ''}
+                                `;
+                                imagePreviewContainer.appendChild(imageDiv);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading images:', error);
+                    });
+            }
 
-                // Set initial status based on vacancy
-                const vacancy = parseInt(btn.getAttribute('data-vacancy') || '0', 10);
-                if (vacancy === 0) {
-                    document.getElementById('editPadStatusDisplay').value = 'Fully Occupied';
-                    document.getElementById('editPadStatus').value = 'Fullyoccupied';
-                } else {
-                    document.getElementById('editPadStatusDisplay').value = 'Available';
-                    document.getElementById('editPadStatus').value = 'Available';
-                }
+            // Function to remove image for show page
+            window.removeImageShow = function(index, imagePath) {
+                // Add hidden input to track removed images
+                const removedImagesContainer = document.getElementById('removedImagesInputsShow');
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'removed_images[]';
+                hiddenInput.value = imagePath;
+                removedImagesContainer.appendChild(hiddenInput);
+                
+                // Remove the image preview
+                event.target.parentElement.remove();
+            }
 
-                // Step logic
-                mapStepEdit.style.display = 'block';
-                formStepEdit.style.display = 'none';
-                nextButtonEdit.style.display = 'inline-block';
-                backButtonEdit.style.display = 'none';
-                submitButtonEdit.style.display = 'none';
+            // Show modal and pre-fill data
+            document.querySelectorAll('.editPadBtn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = btn.getAttribute('data-id');
+                    document.getElementById('editPadForm').action = `/landlord/pads/${id}`;
+                    document.getElementById('editPadId').value = id;
+                    document.getElementById('editPadName').value = btn.getAttribute('data-name');
+                    document.getElementById('editPadDescription').value = btn.getAttribute('data-description');
+                    document.getElementById('editPadRent').value = btn.getAttribute('data-rent');
+                    document.getElementById('editPadVacancy').value = btn.getAttribute('data-vacancy');
+                    document.getElementById('editPadLocation').value = btn.getAttribute('data-location');
+                    document.getElementById('editLatitude').value = btn.getAttribute('data-latitude');
+                    document.getElementById('editLongitude').value = btn.getAttribute('data-longitude');
+
+                    // Set initial status based on vacancy
+                    const vacancy = parseInt(btn.getAttribute('data-vacancy') || '0', 10);
+                    if (vacancy === 0) {
+                        document.getElementById('editPadStatusDisplay').value = 'Fully Occupied';
+                        document.getElementById('editPadStatus').value = 'Fullyoccupied';
+                    } else {
+                        document.getElementById('editPadStatusDisplay').value = 'Available';
+                        document.getElementById('editPadStatus').value = 'Available';
+                    }
+
+                    // Load current images
+                    loadCurrentImagesShow(id);
+
+                    // Step logic
+                    mapStepEdit.style.display = 'block';
+                    formStepEdit.style.display = 'none';
+                    nextButtonEdit.style.display = 'inline-block';
+                    backButtonEdit.style.display = 'none';
+                    submitButtonEdit.style.display = 'none';
 
                 // Map logic
                 setTimeout(function() {
@@ -478,7 +566,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 
                                 container.onclick = function(e) {
                                     e.preventDefault();
-                                    map.setView([7.9092, 125.0949], 16);
+                                    map.setView([7.9092, 125.0949], 15);
                                 }
                                 
                                 return container;
@@ -495,7 +583,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         })
                             .on('markgeocode', function (e) {
                                 const center = e.geocode.center;
-                                editMap.setView(center, 16);
+                                editMap.setView(center, 15);
                                 if (editMarker) editMap.removeLayer(editMarker);
                                 editMarker = L.marker(center).addTo(editMap);
                                 document.getElementById('editLatitude').value = center.lat;
@@ -515,7 +603,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         // Move marker to current location
                         const lat = btn.getAttribute('data-latitude') || 7.9092;
                         const lng = btn.getAttribute('data-longitude') || 125.0949;
-                        editMap.setView([lat, lng], 16);
+                        editMap.setView([lat, lng], 15);
                         if (editMarker) editMap.removeLayer(editMarker);
                         editMarker = L.marker([lat, lng]).addTo(editMap);
                     }
@@ -573,8 +661,99 @@ document.addEventListener("DOMContentLoaded", function () {
             if (editMap) setTimeout(() => editMap.invalidateSize(), 100);
             const modalInstance = bootstrap.Modal.getInstance(editPadModal);
             if (modalInstance) modalInstance.hide();
+                    });
+
+                         // Handle image input preview for show page
+             const imageInputShow = document.getElementById('imageInputShow');
+             if (imageInputShow) {
+                 imageInputShow.addEventListener('change', function(e) {
+                     const files = Array.from(e.target.files);
+                     const imagePreviewContainer = document.getElementById('imagePreviewContainerShow');
+                     
+                     // Count existing images (not new previews)
+                     const existingImages = imagePreviewContainer.querySelectorAll('div:not(.new-image-preview)').length;
+                     
+                     // Check if total would exceed 3
+                     if (existingImages + files.length > 3) {
+                         showImageLimitModal(existingImages, files.length);
+                         e.target.value = ''; // Clear the file input
+                         return;
+                     }
+                     
+                     // Clear existing previews of new files
+                     const existingPreviews = imagePreviewContainer.querySelectorAll('.new-image-preview');
+                     existingPreviews.forEach(preview => preview.remove());
+                     
+                     files.forEach((file, index) => {
+                         if (file.type.startsWith('image/')) {
+                             const reader = new FileReader();
+                             reader.onload = function(e) {
+                                 const imageDiv = document.createElement('div');
+                                 imageDiv.className = 'position-relative new-image-preview';
+                                 imageDiv.style.cssText = 'width: 100px; height: 100px;';
+                                 imageDiv.innerHTML = `
+                                     <img src="${e.target.result}" class="img-fluid rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                                     <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle" 
+                                             style="width: 25px; height: 25px; padding: 0; font-size: 12px; transform: translate(50%, -50%);"
+                                             onclick="removeNewImageShow(this)">
+                                         ×
+                                     </button>
+                                     <small class="position-absolute bottom-0 start-0 bg-success text-white px-1 rounded" style="font-size: 10px;">New</small>
+                                 `;
+                                 imagePreviewContainer.appendChild(imageDiv);
+                             };
+                             reader.readAsDataURL(file);
+                         }
+                     });
+                 });
+             }
+
+                         // Function to remove new image preview for show page
+             window.removeNewImageShow = function(button) {
+                 button.parentElement.remove();
+                 // Reset file input
+                 document.getElementById('imageInputShow').value = '';
+             }
+
+             // Function to show image limit modal
+             function showImageLimitModal(existingCount, selectedCount) {
+                 const modalHtml = `
+                     <div class="modal fade" id="imageLimitModal" tabindex="-1" aria-labelledby="imageLimitModalLabel" aria-hidden="true">
+                         <div class="modal-dialog modal-dialog-centered modal-sm">
+                             <div class="modal-content border-0 shadow">
+                                 <div class="modal-header bg-warning text-white border-0">
+                                     <h6 class="modal-title" id="imageLimitModalLabel">
+                                         <i class="fas fa-exclamation-triangle me-2"></i>Image Limit Exceeded
+                                     </h6>
+                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                 </div>
+                                 <div class="modal-body text-center py-3">
+                                     <p class="mb-0">Maximum of 3 images allowed</p>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                 `;
+                 
+                 // Remove existing modal if any
+                 const existingModal = document.getElementById('imageLimitModal');
+                 if (existingModal) {
+                     existingModal.remove();
+                 }
+                 
+                 // Add modal to body
+                 document.body.insertAdjacentHTML('beforeend', modalHtml);
+                 
+                 // Show modal
+                 const modal = new bootstrap.Modal(document.getElementById('imageLimitModal'));
+                 modal.show();
+                 
+                 // Remove modal from DOM after it's hidden
+                 document.getElementById('imageLimitModal').addEventListener('hidden.bs.modal', function() {
+                     this.remove();
+                 });
+             }
         });
-    });
     </script>
 @endpush
 @endsection

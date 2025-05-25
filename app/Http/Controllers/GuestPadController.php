@@ -60,8 +60,8 @@ class GuestPadController extends Controller
 
         // Location filter
         if ($request->filled('location_filter')) {
-            $city = $request->input('location_filter');
-            $query->where('padLocation', 'like', "%$city%");
+            $barangay = $request->input('location_filter');
+            $query->where('padLocation', 'like', "%$barangay%");
         }
 
         // Price filter
