@@ -62,12 +62,15 @@
                             <h5 class="card-title">{{ $pad->padName }}</h5>
                             <p class="card-text">{{ $pad->padLocation }}</p>
                             <p class="card-text text-muted mb-1">₱{{ number_format($pad->padRent, 2) }}</p>
+                            @php
+                                $statusDisplay = [
+                                    'Available' => 'Available',
+                                    'Fullyoccupied' => 'Fully Occupied',
+                                    'Maintenance' => 'Maintenance'
+                                ];
+                            @endphp
                             <p class="card-text text-muted mb-1">Status: 
-                                @if ($pad->number_of_boarders >= $pad->vacancy)
-                                    Fully Occupied
-                                @else
-                                    {{ ucfirst($pad->padStatus) }}
-                                @endif
+                                {{ $statusDisplay[$pad->padStatus] ?? $pad->padStatus }}
                             </p>
                             @if ($pad->number_of_boarders >= $pad->vacancy)
                                 <p class="card-text text-muted mb-1"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }} (Fully Occupied)</p>
@@ -144,14 +147,12 @@
                             </div>
                             <div class="mb-3">
                                 <label>Vacancy</label>
-                                <input type="number" name="vacancy" class="form-control" required>
+                                <input type="number" name="vacancy" id="createVacancy" class="form-control" required>
                             </div>
                             <div class="mb-3">
                                 <label>Status</label>
-                                <select name="padStatus" class="form-select" required>
-                                    <option value="available">Available</option>
-                                    <option value="occupied">Occupied</option>
-                                </select>
+                                <input type="text" class="form-control" id="createPadStatusDisplay" value="Available" readonly>
+                                <input type="hidden" name="padStatus" id="createPadStatus" value="Available">
                             </div>
                             <div class="mb-3">
                                 <label>Image</label>
@@ -216,10 +217,8 @@
                             </div>
                             <div class="mb-3">
                                 <label>Status</label>
-                                <select name="padStatus" id="editPadStatus" class="form-select" required>
-                                    <option value="available">Available</option>
-                                    <option value="occupied">Occupied</option>
-                                </select>
+                                <input type="text" class="form-control" id="editPadStatusDisplay" readonly>
+                                <input type="hidden" name="padStatus" id="editPadStatus">
                             </div>
                             <div class="mb-3">
                                 <label>Image</label>
@@ -304,15 +303,46 @@
                 createPadModal.addEventListener('shown.bs.modal', function () {
                     if (!map) {
                         const defaultLatLng = [7.9092, 125.0949];
-                        map = L.map('map').setView(defaultLatLng, 14);
+                        map = L.map('map', {
+                            zoomControl: true,
+                            zoomControlOptions: {
+                                position: 'topright'
+                            }
+                        }).setView(defaultLatLng, 14);
 
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                             attribution: '© OpenStreetMap contributors'
                         }).addTo(map);
 
+                        // Add custom reset control
+                        L.Control.ResetView = L.Control.extend({
+                            onAdd: function(map) {
+                                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                                container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
+                                container.style.backgroundColor = 'white';
+                                container.style.width = '30px';
+                                container.style.height = '30px';
+                                container.style.display = 'flex';
+                                container.style.alignItems = 'center';
+                                container.style.justifyContent = 'center';
+                                
+                                container.onclick = function(e) {
+                                    e.preventDefault();
+                                    map.setView(defaultLatLng, 14);
+                                }
+                                
+                                return container;
+                            },
+                            onRemove: function(map) {}
+                        });
+
+                        // Add reset control to map
+                        new L.Control.ResetView({ position: 'topleft' }).addTo(map);
+
                         // Geocoder
                         L.Control.geocoder({
-                            defaultMarkGeocode: false
+                            defaultMarkGeocode: false,
+                            position: 'topright'
                         })
                             .on('markgeocode', function (e) {
                                 const center = e.geocode.center;
@@ -393,6 +423,10 @@
                 document.getElementById('longitude').value = '';
                 document.getElementById('padLocation').value = '';
 
+                // Reset status fields to default
+                document.getElementById('createPadStatusDisplay').value = 'Available';
+                document.getElementById('createPadStatus').value = 'Available';
+
                 // Reset the whole form
                 const form = createPadModal.querySelector('form');
                 if (form) form.reset();
@@ -413,6 +447,24 @@
                     modalInstance.hide();
                 }
             });
+
+            // Add vacancy change listener for create modal
+            const createVacancyInput = document.getElementById('createVacancy');
+            const createPadStatusDisplay = document.getElementById('createPadStatusDisplay');
+            const createPadStatusHidden = document.getElementById('createPadStatus');
+
+            if (createVacancyInput && createPadStatusDisplay && createPadStatusHidden) {
+                createVacancyInput.addEventListener('input', function () {
+                    const vacancy = parseInt(createVacancyInput.value, 10);
+                    if (vacancy === 0) {
+                        createPadStatusDisplay.value = 'Fully Occupied';
+                        createPadStatusHidden.value = 'Fullyoccupied';
+                    } else {
+                        createPadStatusDisplay.value = 'Available';
+                        createPadStatusHidden.value = 'Available';
+                    }
+                });
+            }
 
             // Delete Pad buttons
             document.querySelectorAll('.deletePadBtn').forEach(function (button) {
@@ -440,15 +492,46 @@
 
             function setMarkerOnMap(lat, lng) {
                 if (!editMap) {
-                    editMap = L.map('editMap').setView([lat, lng], 14);
+                    editMap = L.map('editMap', {
+                        zoomControl: true,
+                        zoomControlOptions: {
+                            position: 'topright'
+                        }
+                    }).setView([lat, lng], 14);
 
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
                     }).addTo(editMap);
 
-                    // Add geocoder control for searching locations
+                    // Add custom reset control
+                    L.Control.ResetView = L.Control.extend({
+                        onAdd: function(map) {
+                            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                            container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
+                            container.style.backgroundColor = 'white';
+                            container.style.width = '30px';
+                            container.style.height = '30px';
+                            container.style.display = 'flex';
+                            container.style.alignItems = 'center';
+                            container.style.justifyContent = 'center';
+                            
+                            container.onclick = function(e) {
+                                e.preventDefault();
+                                map.setView([7.9092, 125.0949], 14);
+                            }
+                            
+                            return container;
+                        },
+                        onRemove: function(map) {}
+                    });
+
+                    // Add reset control to map
+                    new L.Control.ResetView({ position: 'topleft' }).addTo(editMap);
+
+                    // Geocoder
                     L.Control.geocoder({
-                        defaultMarkGeocode: false
+                        defaultMarkGeocode: false,
+                        position: 'topright'
                     })
                         .on('markgeocode', function (e) {
                             const center = e.geocode.center;
@@ -499,10 +582,19 @@
                     document.getElementById('editPadLocation').value = this.dataset.location || '';
                     document.getElementById('editPadRent').value = this.dataset.rent || '';
                     document.getElementById('editPadVacancy').value = this.dataset.vacancy || '';
-                    document.getElementById('editPadStatus').value = this.dataset.status || '';
                     document.getElementById('editLatitude').value = this.dataset.latitude || '';
                     document.getElementById('editLongitude').value = this.dataset.longitude || '';
                     document.getElementById('editPadForm').action = '/landlord/pads/' + this.dataset.id;
+
+                    // Set initial status based on vacancy
+                    const vacancy = parseInt(this.dataset.vacancy || '0', 10);
+                    if (vacancy === 0) {
+                        document.getElementById('editPadStatusDisplay').value = 'Fully Occupied';
+                        document.getElementById('editPadStatus').value = 'Fullyoccupied';
+                    } else {
+                        document.getElementById('editPadStatusDisplay').value = 'Available';
+                        document.getElementById('editPadStatus').value = 'Available';
+                    }
 
                     const lat = parseFloat(this.dataset.latitude) || 7.9092;
                     const lng = parseFloat(this.dataset.longitude) || 125.0949;
@@ -519,6 +611,24 @@
                     }, 300);
                 });
             });
+
+            // Add vacancy change listener for edit modal
+            const editVacancyInput = document.getElementById('editPadVacancy');
+            const editPadStatusDisplay = document.getElementById('editPadStatusDisplay');
+            const editPadStatusHidden = document.getElementById('editPadStatus');
+
+            if (editVacancyInput && editPadStatusDisplay && editPadStatusHidden) {
+                editVacancyInput.addEventListener('input', function () {
+                    const vacancy = parseInt(editVacancyInput.value, 10);
+                    if (vacancy === 0) {
+                        editPadStatusDisplay.value = 'Fully Occupied';
+                        editPadStatusHidden.value = 'Fullyoccupied';
+                    } else {
+                        editPadStatusDisplay.value = 'Available';
+                        editPadStatusHidden.value = 'Available';
+                    }
+                });
+            }
 
             const cancelEditBtn = document.getElementById('cancelButtonEdit');
             if (cancelEditBtn) {

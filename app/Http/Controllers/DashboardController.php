@@ -37,7 +37,7 @@ class DashboardController extends Controller
             'total_landlords' => User::where('role', 'landlord')->count(),
             'total_tenants' => User::where('role', 'tenant')->count(),
             'total_pads' => Pad::count(),
-            'available_pads' => Pad::where('padStatus', 'available')->count(),
+            'available_pads' => Pad::where('padStatus', 'Available')->count(),
             'total_applications' => PadApplication::count(),
             'pending_applications' => PadApplication::where('status', 'pending')->count(),
         ];

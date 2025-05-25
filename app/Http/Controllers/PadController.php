@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Mail;
 use App\Exports\LandlordApplicationsExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Mail\BoarderKickedMail;
+use App\Mail\ApplicationReceivedMail;
+use App\Mail\ApplicationCancelledMail;
 use App\Exports\LandlordBoardersExport;
 
 class PadController extends Controller
@@ -75,7 +77,7 @@ class PadController extends Controller
             'padLocation' => 'required',
             'padRent' => 'required|numeric',
             'vacancy' => 'required|numeric',
-            'padStatus' => 'required|in:available,occupied,maintenance',
+            'padStatus' => 'required|in:Available,Fullyoccupied,Maintenance',
             'padImage' => 'nullable|image',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
@@ -121,7 +123,7 @@ class PadController extends Controller
             'padLocation' => 'required',
             'padRent' => 'required|numeric',
             'vacancy' => 'required|numeric',
-            'padStatus' => 'required|in:available,occupied,maintenance',
+            'padStatus' => 'required|in:Available,Fullyoccupied,Maintenance',
             'padImage' => 'nullable|image',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
@@ -237,7 +239,7 @@ class PadController extends Controller
             'padLocation' => 'required|string|max:255',
             'padRent' => 'required|numeric|min:0',
             'vacancy' => 'required|numeric|min:0',
-            'padStatus' => 'required|in:available,occupied,maintenance',
+            'padStatus' => 'required|in:Available,Fullyoccupied,Maintenance',
             'userID' => 'required|exists:users,id',
             'padImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'latitude' => 'required|numeric',
@@ -290,7 +292,7 @@ class PadController extends Controller
             'padLocation' => 'required|string|max:255',
             'padRent' => 'required|numeric|min:0',
             'vacancy' => 'required|numeric|min:0',
-            'padStatus' => 'required|in:available,occupied,maintenance',
+            'padStatus' => 'required|in:Available,Fullyoccupied,Maintenance',
             'userID' => 'required|exists:users,id',
             'padImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'latitude' => 'required|numeric',
@@ -354,7 +356,7 @@ class PadController extends Controller
     // Tenant view of available pads
     public function tenantIndex(Request $request)
     {
-        $query = Pad::where('padStatus', 'available');
+        $query = Pad::where('padStatus', 'Available');
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -414,7 +416,7 @@ class PadController extends Controller
     // Tenant applies for a pad
     public function tenantApply(Request $request, $padId)
     {
-        $pad = Pad::where('padID', $padId)->where('padStatus', 'available')->firstOrFail();
+        $pad = Pad::where('padID', $padId)->where('padStatus', 'Available')->firstOrFail();
         $tenant = Auth::user();
 
         $request->validate([
@@ -437,6 +439,16 @@ class PadController extends Controller
             'application_date' => now(),
             'message' => $request->input('message'),
         ]);
+
+        // Send email notification to landlord
+        if ($pad->landlord && $pad->landlord->email) {
+            try {
+                Mail::to($pad->landlord->email)->send(new ApplicationReceivedMail($application));
+            } catch (\Exception $e) {
+                // Log the error but don't stop the application process
+                \Log::error('Failed to send application notification email: ' . $e->getMessage());
+            }
+        }
 
         $this->logActivity('apply_pad', "Applied for pad: {$pad->padName}");
 
@@ -705,13 +717,24 @@ class PadController extends Controller
 
     public function tenantCancelApplication($applicationId)
     {
-        $application = PadApplication::where('id', $applicationId)
+        $application = PadApplication::with(['pad.landlord', 'tenant'])
+            ->where('id', $applicationId)
             ->where('user_id', Auth::id())
             ->whereIn('status', ['pending', 'approved'])
             ->firstOrFail();
 
         $application->status = 'cancelled';
         $application->save();
+
+        // Send email notification to landlord
+        if ($application->pad && $application->pad->landlord && $application->pad->landlord->email) {
+            try {
+                Mail::to($application->pad->landlord->email)->send(new ApplicationCancelledMail($application));
+            } catch (\Exception $e) {
+                // Log the error but don't stop the cancellation process
+                \Log::error('Failed to send application cancellation notification email: ' . $e->getMessage());
+            }
+        }
 
         $this->logActivity('cancel_application', "Cancelled application for pad: {$application->pad->padName}");
 
@@ -724,9 +747,9 @@ class PadController extends Controller
         $pad = Pad::findOrFail($padId);
 
         if ($pad->number_of_boarders >= $pad->vacancy) {
-            $pad->padStatus = 'occupied';
+            $pad->padStatus = 'Fullyoccupied';
         } elseif ($pad->number_of_boarders < $pad->vacancy) {
-            $pad->padStatus = 'available';
+            $pad->padStatus = 'Available';
         }
 
         $pad->save();

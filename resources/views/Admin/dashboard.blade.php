@@ -72,15 +72,47 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            var map = L.map('map').setView([7.9092, 125.0949], 15); // Default center
+            // Initialize map with enhanced controls
+            var map = L.map('map', {
+                zoomControl: true,
+                zoomControlOptions: {
+                    position: 'topright'
+                }
+            }).setView([7.9092, 125.0949], 15);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
+            // Add custom reset control
+            L.Control.ResetView = L.Control.extend({
+                onAdd: function(map) {
+                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                    container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
+                    container.style.backgroundColor = 'white';
+                    container.style.width = '30px';
+                    container.style.height = '30px';
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    
+                    container.onclick = function(e) {
+                        e.preventDefault();
+                        map.setView([7.9092, 125.0949], 15);
+                    }
+                    
+                    return container;
+                },
+                onRemove: function(map) {}
+            });
+
+            // Add reset control to map
+            new L.Control.ResetView({ position: 'topleft' }).addTo(map);
+
             // Add geocoder control for searching locations
             L.Control.geocoder({
-                defaultMarkGeocode: false
+                defaultMarkGeocode: false,
+                position: 'topright'
             })
                 .on('markgeocode', function (e) {
                     const center = e.geocode.center;
@@ -100,34 +132,6 @@
                                 `);
                 @endif
             @endforeach
-
-            // Custom Reset View Button
-            L.Control.ResetView = L.Control.extend({
-                onAdd: function (map) {
-                    const btn = L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-control-custom');
-                    btn.innerHTML = '⤾'; // Use an icon or symbol
-                    btn.title = "Return to Default View";
-
-                    btn.style.backgroundColor = 'white';
-                    btn.style.width = '34px';
-                    btn.style.height = '34px';
-                    btn.style.cursor = 'pointer';
-                    btn.style.textAlign = 'center';
-                    btn.style.lineHeight = '34px';
-
-                    btn.onclick = function () {
-                        map.setView([7.9092, 125.0949], 15); // Reset to default
-                    };
-
-                    return btn;
-                }
-            });
-
-            L.control.resetView = function (opts) {
-                return new L.Control.ResetView(opts);
-            }
-
-            L.control.resetView({ position: 'topleft' }).addTo(map);
         });
     </script>
 

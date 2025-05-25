@@ -75,11 +75,14 @@
                                 <p class="card-text"><strong>Rent:</strong> ₱{{ number_format($pad->padRent, 2) }}</p>
                                 <p class="card-text"><strong>Landlord:</strong> {{ $pad->landlord->first_name ?? 'N/A' }}
                                     {{ $pad->landlord->last_name ?? '' }}</p>
-                                @if ($pad->number_of_boarders >= $pad->vacancy)
-                                    <p class="card-text"><strong>Status:</strong> Fully Occupied</p>
-                                @else
-                                    <p class="card-text"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
-                                @endif
+                                @php
+                                    $statusDisplay = [
+                                        'Available' => 'Available',
+                                        'Fullyoccupied' => 'Fully Occupied',
+                                        'Maintenance' => 'Maintenance'
+                                    ];
+                                @endphp
+                                <p class="card-text"><strong>Status:</strong> {{ $statusDisplay[$pad->padStatus] ?? $pad->padStatus }}</p>
                             </div>
                         </a>
                     </div>

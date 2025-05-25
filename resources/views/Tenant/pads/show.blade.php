@@ -29,18 +29,20 @@
                     <div class="row mb-2">
                         <div class="col-5 text-muted fw-bold">Status:</div>
                         <div class="col-7">
+                            @php
+                                $statusDisplay = [
+                                    'Available' => 'Available',
+                                    'Fullyoccupied' => 'Fully Occupied',
+                                    'Maintenance' => 'Maintenance'
+                                ];
+                            @endphp
                             <span class="badge 
-                                @if($pad->padStatus == 'available') bg-success
-                                @elseif($pad->number_of_boarders >= $pad->vacancy) bg-danger
-                                @elseif($pad->padStatus == 'occupied') bg-danger
+                                @if($pad->padStatus == 'Available') bg-success
+                                @elseif($pad->padStatus == 'Fullyoccupied') bg-danger
                                 @else bg-warning text-dark
                                 @endif
                             ">
-                                @if($pad->number_of_boarders >= $pad->vacancy)
-                                    Fully Occupied
-                                @else
-                                    {{ ucfirst($pad->padStatus) }}
-                                @endif
+                                {{ $statusDisplay[$pad->padStatus] ?? $pad->padStatus }}
                             </span>
                         </div>
                     </div>
@@ -70,7 +72,7 @@
                 </div>
             </div>
 
-            @if($pad->padStatus == 'available')
+            @if($pad->padStatus == 'Available')
                 <div class="d-flex gap-2 mt-3">
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#applyPadModal">
                         Apply for this Pad
@@ -143,12 +145,42 @@
             var lat = {{ $pad->latitude ?? 0 }};
             var lng = {{ $pad->longitude ?? 0 }};
 
-            var map = L.map('map').setView([lat, lng], 16);
+            var map = L.map('map', {
+                zoomControl: true,
+                zoomControlOptions: {
+                    position: 'topright'
+                }
+            }).setView([lat, lng], 16);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
+
+            // Add custom reset control
+            L.Control.ResetView = L.Control.extend({
+                onAdd: function(map) {
+                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                    container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
+                    container.style.backgroundColor = 'white';
+                    container.style.width = '30px';
+                    container.style.height = '30px';
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    
+                    container.onclick = function(e) {
+                        e.preventDefault();
+                        map.setView([lat, lng], 16);
+                    }
+                    
+                    return container;
+                },
+                onRemove: function(map) {}
+            });
+
+            // Add reset control to map
+            new L.Control.ResetView({ position: 'topleft' }).addTo(map);
 
             L.marker([lat, lng]).addTo(map)
                 .bindPopup("{{ $pad->padName }}")
@@ -157,3 +189,4 @@
     </script>
 @endpush
 @endsection
+

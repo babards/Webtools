@@ -38,6 +38,7 @@
                     <th>Application Date</th>
                     <th>Status</th>
                     <th>Message</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -56,17 +57,56 @@
                             ">
                                 {{ ucfirst($application->status) }}
                             </span>
-                            @if($application->status == 'pending')
-                                <form action="{{ route('tenant.applications.cancel', $application->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" onclick="return confirm('Are you sure you want to cancel this application?')" class="btn btn-danger btn-sm">Cancel</button>
-                                </form>
-                            @endif
                         </td>
                         <td>
                             {{ $application->message ?? 'No message' }}
                         </td>
+                        <td>
+                            @if($application->status == 'pending')
+                                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal{{ $application->id }}">
+                                    Cancel
+                                </button>
+                            @else
+                                <span class="text-muted">No actions available</span>
+                            @endif
+                        </td>
                     </tr>
+
+                    <!-- Cancel Modal for each application -->
+                    @if($application->status == 'pending')
+                    <div class="modal fade" id="cancelModal{{ $application->id }}" tabindex="-1" aria-labelledby="cancelModalLabel{{ $application->id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="cancelModalLabel{{ $application->id }}">
+                                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>Cancel Application
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="alert alert-warning">
+                                        <strong>Are you sure you want to cancel this application?</strong>
+                                    </div>
+                                    <p><strong>Pad:</strong> {{ $application->pad->padName ?? 'N/A' }}</p>
+                                    <p><strong>Location:</strong> {{ $application->pad->padLocation ?? 'N/A' }}</p>
+                                    <p><strong>Application Date:</strong> {{ $application->application_date->format('F j, Y') }}</p>
+                                    <p class="text-muted">This action cannot be undone. You will need to submit a new application if you change your mind.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="fas fa-times me-1"></i>Keep Application
+                                    </button>
+                                    <form action="{{ route('tenant.applications.cancel', $application->id) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fas fa-trash me-1"></i>Yes, Cancel Application
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 @endforeach
             </tbody>
         </table>

@@ -45,7 +45,7 @@ class GuestPadController extends Controller
     // Landing page with filters
     public function index(Request $request)
     {
-        $query = Pad::where('padStatus', 'available');
+        $query = Pad::where('padStatus', 'Available');
 
         // Search filter
         if ($request->filled('search')) {

@@ -80,11 +80,14 @@
                                         <h5 class="card-title">{{ $pad->padName }}</h5>
                                         <p class="card-text mb-1"><strong>Location:</strong> {{ $pad->padLocation }}</p>
                                         <p class="card-text mb-1"><strong>Rent:</strong> ₱{{ number_format($pad->padRent, 2) }}</p>
-                                        @if ($pad->number_of_boarders >= $pad->vacancy)
-                                            <p class="card-text mb-1"><strong>Status:</strong> Fully Occupied</p>
-                                        @else
-                                            <p class="card-text mb-1"><strong>Vacant:</strong> {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}</p>
-                                        @endif
+                                        @php
+                                            $statusDisplay = [
+                                                'Available' => 'Available',
+                                                'Fullyoccupied' => 'Fully Occupied',
+                                                'Maintenance' => 'Maintenance'
+                                            ];
+                                        @endphp
+                                        <p class="card-text mb-1"><strong>Status:</strong> {{ $statusDisplay[$pad->padStatus] ?? $pad->padStatus }}</p>
                                     </div>
                                 </div>
                             </a>
@@ -179,22 +182,52 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the map with the default coordinates and zoom
-    const map = L.map('padsMap').setView([7.9092, 125.0949], 15);
+    // Initialize the map with enhanced controls
+    const map = L.map('padsMap', {
+        zoomControl: true, // Enable zoom controls
+        zoomControlOptions: {
+            position: 'topright'
+        }
+    }).setView([7.9092, 125.0949], 15);
 
     // Add the tile layer (OpenStreetMap)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
+    // Add custom reset control
+    L.Control.ResetView = L.Control.extend({
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
+            container.style.backgroundColor = 'white';
+            container.style.width = '30px';
+            container.style.height = '30px';
+            container.style.display = 'flex';
+            container.style.alignItems = 'center';
+            container.style.justifyContent = 'center';
+            
+            container.onclick = function(e) {
+                e.preventDefault();
+                map.setView([7.9092, 125.0949], 15);
+            }
+            
+            return container;
+        },
+        onRemove: function(map) {}
+    });
+
+    // Add reset control to map
+    new L.Control.ResetView({ position: 'topleft' }).addTo(map);
+
     // Add geocoder control for searching locations
     L.Control.geocoder({
-        defaultMarkGeocode: false
+        defaultMarkGeocode: false,
+        position: 'topright'
     })
         .on('markgeocode', function (e) {
             const center = e.geocode.center;
             map.setView(center, 16);
-            // Optionally, add a marker or popup here if you want
         })
         .addTo(map);
 

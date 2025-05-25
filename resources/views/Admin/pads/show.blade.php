@@ -29,18 +29,20 @@
                     <div class="row mb-2">
                         <div class="col-5 text-muted fw-bold">Status:</div>
                         <div class="col-7">
+                            @php
+                                $statusDisplay = [
+                                    'Available' => 'Available',
+                                    'Fullyoccupied' => 'Fully Occupied',
+                                    'Maintenance' => 'Maintenance'
+                                ];
+                            @endphp
                             <span class="badge 
-                                @if($pad->padStatus == 'available') bg-success
-                                @elseif($pad->number_of_boarders >= $pad->vacancy) bg-danger
-                                @elseif($pad->padStatus == 'occupied') bg-danger
+                                @if($pad->padStatus == 'Available') bg-success
+                                @elseif($pad->padStatus == 'Fullyoccupied') bg-danger
                                 @else bg-warning text-dark
                                 @endif
                             ">
-                                @if($pad->number_of_boarders >= $pad->vacancy)
-                                    Fully Occupied
-                                @else
-                                    {{ ucfirst($pad->padStatus) }}
-                                @endif
+                                {{ $statusDisplay[$pad->padStatus] ?? $pad->padStatus }}
                             </span>
                         </div>
                     </div>
@@ -48,7 +50,7 @@
                         <div class="col-5 text-muted fw-bold">Vacant:</div>
                         <div class="col-7">
                             @if($pad->number_of_boarders >= $pad->vacancy)
-                                Fully Occupied
+                                {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }} (Fully Occupied)
                             @else
                                 {{ $pad->number_of_boarders ?? 0 }}/{{ $pad->vacancy ?? 0 }}
                             @endif
@@ -145,15 +147,12 @@
                         </div>
                         <div class="mb-3">
                             <label>Vacancy</label>
-                            <input type="number" name="vacancy" class="form-control" value="{{ $pad->vacancy }}" required>
+                            <input type="number" name="vacancy" class="form-control" id="editVacancyInput" value="{{ $pad->vacancy }}" required min="0">
                         </div>
                         <div class="mb-3">
                             <label>Status</label>
-                            <select name="padStatus" class="form-select" required>
-                                <option value="available" {{ $pad->padStatus == 'available' ? 'selected' : '' }}>Available</option>
-                                <option value="occupied" {{ $pad->padStatus == 'occupied' ? 'selected' : '' }}>Occupied</option>
-                                <option value="maintenance" {{ $pad->padStatus == 'maintenance' ? 'selected' : '' }}>Maintenance</option>
-                            </select>
+                            <input type="text" class="form-control" id="editPadStatusInput" value="{{ $pad->vacancy == 0 ? 'Fully Occupied' : 'Available' }}" readonly>
+                            <input type="hidden" name="padStatus" id="editPadStatusHidden" value="{{ $pad->vacancy == 0 ? 'Fullyoccupied' : 'Available' }}">
                         </div>
                         <div class="mb-3">
                             <label>Image</label>
@@ -162,7 +161,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" id="backButtonEdit" style="display: none;">Back</button>
                     <button type="button" class="btn btn-primary" id="nextButtonEdit">Next</button>
                     <button type="submit" class="btn btn-primary" id="submitButtonEdit" style="display: none;">Update</button>
                 </div>
@@ -203,16 +203,47 @@
             var lat = {{ $pad->latitude ?? 0 }};
             var lng = {{ $pad->longitude ?? 0 }};
 
-            var map = L.map('map').setView([lat, lng], 16);
+            var map = L.map('map', {
+                zoomControl: true,
+                zoomControlOptions: {
+                    position: 'topright'
+                }
+            }).setView([lat, lng], 16);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
+            // Add custom reset control
+            L.Control.ResetView = L.Control.extend({
+                onAdd: function(map) {
+                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                    container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
+                    container.style.backgroundColor = 'white';
+                    container.style.width = '30px';
+                    container.style.height = '30px';
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    
+                    container.onclick = function(e) {
+                        e.preventDefault();
+                        map.setView([lat, lng], 16);
+                    }
+                    
+                    return container;
+                },
+                onRemove: function(map) {}
+            });
+
+            // Add reset control to map
+            new L.Control.ResetView({ position: 'topleft' }).addTo(map);
+
             // Add geocoder control for searching locations
             L.Control.geocoder({
-                defaultMarkGeocode: false
+                defaultMarkGeocode: false,
+                position: 'topright'
             })
                 .on('markgeocode', function (e) {
                     const center = e.geocode.center;
@@ -234,14 +265,46 @@
 
             editPadModal.addEventListener('shown.bs.modal', function () {
                 if (!editMap) {
-                    editMap = L.map('editMap').setView([lat, lng], 16);
+                    editMap = L.map('editMap', {
+                        zoomControl: true,
+                        zoomControlOptions: {
+                            position: 'topright'
+                        }
+                    }).setView([lat, lng], 16);
+                    
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
                     }).addTo(editMap);
 
+                    // Add custom reset control for edit map
+                    L.Control.ResetViewEdit = L.Control.extend({
+                        onAdd: function(map) {
+                            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                            container.innerHTML = '<a href="#" title="Reset View" role="button" aria-label="Reset View">⌂</a>';
+                            container.style.backgroundColor = 'white';
+                            container.style.width = '30px';
+                            container.style.height = '30px';
+                            container.style.display = 'flex';
+                            container.style.alignItems = 'center';
+                            container.style.justifyContent = 'center';
+                            
+                            container.onclick = function(e) {
+                                e.preventDefault();
+                                map.setView([lat, lng], 16);
+                            }
+                            
+                            return container;
+                        },
+                        onRemove: function(map) {}
+                    });
+
+                    // Add reset control to edit map
+                    new L.Control.ResetViewEdit({ position: 'topleft' }).addTo(editMap);
+
                     // Add geocoder control for searching locations in edit modal
                     L.Control.geocoder({
-                        defaultMarkGeocode: false
+                        defaultMarkGeocode: false,
+                        position: 'topright'
                     })
                         .on('markgeocode', function (e) {
                             const center = e.geocode.center;
@@ -286,6 +349,21 @@
             const submitButtonEdit = document.getElementById('submitButtonEdit');
             const mapStepEdit = document.getElementById('mapStepEdit');
             const formStepEdit = document.getElementById('formStepEdit');
+            // Add vacancy/status logic
+            const editVacancyInput = document.getElementById('editVacancyInput');
+            const editPadStatusInput = document.getElementById('editPadStatusInput');
+            if (editVacancyInput && editPadStatusInput) {
+                editVacancyInput.addEventListener('input', function () {
+                    const vacancy = parseInt(editVacancyInput.value, 10);
+                    if (vacancy === 0) {
+                        editPadStatusInput.value = 'Fully Occupied';
+                        document.getElementById('editPadStatusHidden').value = 'Fullyoccupied';
+                    } else {
+                        editPadStatusInput.value = 'Available';
+                        document.getElementById('editPadStatusHidden').value = 'Available';
+                    }
+                });
+            }
 
             nextButtonEdit.addEventListener('click', function () {
                 const locationVal = editPadLocationInput.value.trim();
@@ -297,11 +375,24 @@
                 formStepEdit.style.display = 'block';
                 nextButtonEdit.style.display = 'none';
                 submitButtonEdit.style.display = 'inline-block';
+                const backButtonEdit = document.getElementById('backButtonEdit');
+                backButtonEdit.style.display = 'inline-block';
             });
 
             submitButtonEdit.addEventListener('click', function () {
                 document.getElementById('editPadForm').submit();
             });
+
+            const backButtonEdit = document.getElementById('backButtonEdit');
+            if (backButtonEdit) {
+                backButtonEdit.addEventListener('click', function () {
+                    formStepEdit.style.display = 'none';
+                    mapStepEdit.style.display = 'block';
+                    nextButtonEdit.style.display = 'inline-block';
+                    submitButtonEdit.style.display = 'none';
+                    backButtonEdit.style.display = 'none';
+                });
+            }
         });
     </script>
 @endpush
