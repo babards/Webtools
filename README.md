@@ -1,61 +1,63 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<h1>FindMyPad Web Portal FINDMYPAD WEB PORTAL: A RESPONSIVE WEB APPLICATION FOR RENTAL LISTINGS AND MANAGEMENT 🏠</h1>
+A responsive web application for rental listings and management in Valencia City, Bukidnon.
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+<h3>📖 Overview</h3>
+FindMyPad is a centralized platform designed to connect tenants with landlords, providing a streamlined solution for rental property search and management. The application addresses the scattered and inaccessible rental information problem in Valencia City, Bukidnon, by offering a comprehensive digital platform for browsing verified rental listings.
 
-## About Laravel
+<h3>🎯 Project Objectives</h3>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Centralized Platform: Provide a single location where tenants can browse verified rental listings
+Enhanced Transparency: Offer detailed property information with comprehensive descriptions and images
+Streamlined Process: Simplify the rental application process for both tenants and landlords
+Improved Efficiency: Reduce time and resources spent on property searches
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+<h3>⚡ Key Features</h3>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+<strong>For Tenants:</strong>
+Browse rental listings with detailed information,
+Search and filter properties by price, location, and type,
+Interactive map integration for location-based searches,
+Submit rental applications online,
+View application status and history
 
-## Learning Laravel
+<strong>For Landlords: </strong>
+Manage property listings with CRUD operations,
+Review and approve/reject tenant applications,
+Access tenant analytics and reports,
+Receive email notifications for applications,
+Export application reports in PDF format
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+<strong>For Administrators: </strong>
+User management (tenants and landlords),
+Property listing oversight and approval,
+System analytics and reporting,
+Email notification management
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+<h3>🛠️ Technology Stack</h3>
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+<strong>Backend:</strong> Laravel (PHP Framework)
+<strong><br>Frontend:</strong> Tailwind CSS
+<strong><br>Database:</strong> MySQL with PhpMyAdmin
+<strong><br>Authentication:</strong> Laravel's built-in authentication system 
+<strong><br>Version Control:</strong> GitHub 
+<strong><br>Maps Integration:</strong> Interactive mapping for location-based searches
 
-## Laravel Sponsors
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+<h3>🏗️ System Architecture</h3>
+<strong>User Roles</strong>
+<strong><br>Admin:</strong> System management and oversight
+<strong><br>Landlord:</strong> Property management and tenant applications
+<strong><br>Tenant:</strong> Property search and rental applications
 
-### Premium Partners
+<h3>⚡ Core Modules</h3>
+<strong>User Authentication & Role Management</strong>
+<strong><br>Property Listings Management</strong>
+<strong><br>Search & Filter System</strong>
+<strong><br>Application Management</strong>
+<strong><br>Email Notification System</strong>
+<strong><br>Reporting & Analytics</strong>
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development/)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+<h3>👥 Team Members</h3>
+Kenny Walter P. Duran - Developer
+<br>Ervin John S. Libardos - Developer
+<br>Noel Lactaotao - Developer
