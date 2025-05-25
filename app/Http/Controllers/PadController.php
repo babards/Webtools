@@ -116,7 +116,7 @@ class PadController extends Controller
 
         $this->logActivity('create_pad', "Created new pad: {$pad->padName}");
 
-        return redirect()->route('landlord.pads.index')->with('success', 'Pad created successfully!');
+        return redirect()->route('landlord.pads.index')->with('crud_success', 'Pad created successfully!');
     }
 
 
@@ -195,9 +195,9 @@ class PadController extends Controller
 
         // Check redirect_to parameter to determine where to redirect
         if ($request->input('redirect_to') === 'index') {
-            return redirect()->route('landlord.pads.index')->with('success', 'Pad updated successfully!');
+            return redirect()->route('landlord.pads.index')->with('crud_success', 'Pad updated successfully!');
         } else {
-            return redirect()->route('landlord.pads.show', $pad->padID)->with('success', 'Pad updated successfully!');
+            return redirect()->route('landlord.pads.show', $pad->padID)->with('crud_success', 'Pad updated successfully!');
         }
     }
 
@@ -210,7 +210,7 @@ class PadController extends Controller
 
         $this->logActivity('delete_pad', "Deleted pad: {$padName}");
 
-        return redirect()->route('landlord.pads.index')->with('success', 'Pad deleted successfully!');
+        return redirect()->route('landlord.pads.index')->with('crud_success', 'Pad deleted successfully!');
     }
 
     public function show($id)
@@ -330,7 +330,7 @@ class PadController extends Controller
 
         $this->logActivity('admin_create_pad', "Admin created pad: {$pad->padName}");
 
-        return redirect()->route('admin.pads.index')->with('success', 'Pad created successfully!');
+        return redirect()->route('admin.pads.index')->with('crud_success', 'Pad created successfully!');
     }
 
 
@@ -418,9 +418,9 @@ class PadController extends Controller
 
         // Check redirect_to parameter to determine where to redirect
         if ($request->input('redirect_to') === 'index') {
-            return redirect()->route('admin.pads.index')->with('success', 'Pad updated successfully!');
+            return redirect()->route('admin.pads.index')->with('crud_success', 'Pad updated successfully!');
         } else {
-            return redirect()->route('admin.pads.show', $pad->padID)->with('success', 'Pad updated successfully!');
+            return redirect()->route('admin.pads.show', $pad->padID)->with('crud_success', 'Pad updated successfully!');
         }
     }
 
@@ -433,7 +433,7 @@ class PadController extends Controller
 
         $this->logActivity('admin_delete_pad', "Admin deleted pad: {$padName}");
 
-        return redirect()->route('admin.pads.index')->with('success', 'Pad deleted successfully!');
+        return redirect()->route('admin.pads.index')->with('crud_success', 'Pad deleted successfully!');
     }
 
     public function adminShow($id)
@@ -519,7 +519,7 @@ class PadController extends Controller
             ->first();
 
         if ($existingApplication) {
-            return redirect()->back()->with('error', 'You already have an active application for this pad.');
+            return redirect()->back()->with('crud_error', 'You already have an active application for this pad.');
         }
 
         $application = PadApplication::create([
@@ -542,7 +542,7 @@ class PadController extends Controller
 
         $this->logActivity('apply_pad', "Applied for pad: {$pad->padName}");
 
-        return redirect()->route('tenant.pads.index')->with('success', 'Application submitted successfully!');
+        return redirect()->route('tenant.pads.index')->with('crud_success', 'Application submitted successfully!');
     }
 
     // Tenant views their applications
@@ -601,7 +601,7 @@ class PadController extends Controller
 
         // Ensure the authenticated user is the landlord of the pad
         if ($pad->userID !== Auth::id()) {
-            return redirect()->back()->with('error', 'Unauthorized action.');
+            return redirect()->back()->with('crud_error', 'Unauthorized action.');
         }
 
         if ($application->status === 'pending') {
@@ -628,9 +628,9 @@ class PadController extends Controller
             $tenantInfo = $tenant ? $tenant->first_name . ' ' . $tenant->last_name . ' (' . $tenant->email . ')' : 'Unknown Tenant';
             $this->logActivity('approve_application', "Approved application for pad: {$pad->padName} | Tenant: {$tenantInfo}");
 
-            return redirect()->back()->with('success', 'Application approved successfully.');
+            return redirect()->back()->with('crud_success', 'Application approved successfully.');
         }
-        return redirect()->back()->with('error', 'Application cannot be approved.');
+        return redirect()->back()->with('crud_error', 'Application cannot be approved.');
     }
 
     // Landlord rejects an application
@@ -642,7 +642,7 @@ class PadController extends Controller
 
         // Ensure the authenticated user is the landlord of the pad
         if ($pad->userID !== Auth::id()) {
-            return redirect()->back()->with('error', 'Unauthorized action.');
+            return redirect()->back()->with('crud_error', 'Unauthorized action.');
         }
 
         if ($application->status === 'pending') {
@@ -657,9 +657,9 @@ class PadController extends Controller
             $tenantInfo = $tenant ? $tenant->first_name . ' ' . $tenant->last_name . ' (' . $tenant->email . ')' : 'Unknown Tenant';
             $this->logActivity('reject_application', "Rejected application for pad: {$pad->padName} | Tenant: {$tenantInfo}");
 
-            return redirect()->back()->with('success', 'Application rejected successfully.');
+            return redirect()->back()->with('crud_success', 'Application rejected successfully.');
         }
-        return redirect()->back()->with('error', 'Application cannot be rejected.');
+        return redirect()->back()->with('crud_error', 'Application cannot be rejected.');
     }
 
     public function landlordAllApplications(Request $request)
@@ -771,7 +771,7 @@ class PadController extends Controller
 
         // Ensure the authenticated user is the landlord of the pad
         if ($pad->userID !== Auth::id()) {
-            return redirect()->back()->with('error', 'Unauthorized action.');
+            return redirect()->back()->with('crud_error', 'Unauthorized action.');
         }
 
         if ($boarders->status === 'active') {
@@ -800,9 +800,9 @@ class PadController extends Controller
 
             $this->logActivity('kicked_boarder', "Kicked boarder for pad: {$pad->padName}");
 
-            return redirect()->back()->with('success', 'Boarder kicked successfully.');
+            return redirect()->back()->with('crud_success', 'Boarder kicked successfully.');
         }
-        return redirect()->back()->with('error', 'Boarder cannot be kicked.');
+        return redirect()->back()->with('crud_error', 'Boarder cannot be kicked.');
     }
 
     public function tenantCancelApplication($applicationId)
@@ -828,7 +828,7 @@ class PadController extends Controller
 
         $this->logActivity('cancel_application', "Cancelled application for pad: {$application->pad->padName}");
 
-        return redirect()->back()->with('success', 'Application cancelled successfully.');
+        return redirect()->back()->with('crud_success', 'Application cancelled successfully.');
     }
 
     // function for updating the status of the pad

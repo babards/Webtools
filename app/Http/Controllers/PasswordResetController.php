@@ -64,7 +64,7 @@ class PasswordResetController extends Controller
             } else {
                 $this->logActivity('password_reset_success', "Password successfully reset for: {$request->email}");
             }
-            return redirect('/login')->with('success', 'Password has been reset successfully.');
+            return redirect('/login')->with('crud_success', 'Password has been reset successfully.');
         } else {
             if ($user) {
                 $this->logActivity('password_reset_failed', "Failed password reset attempt for: {$request->email}", $user->id);

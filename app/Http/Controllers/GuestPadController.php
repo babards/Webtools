@@ -39,7 +39,7 @@ class GuestPadController extends Controller
         // Optionally, notify landlord via email (uncomment if needed)
         // Mail::to($pad->landlord->email)->send(new GuestPadApplicationMail($pad, $request->guest_name, $request->guest_email, $request->message));
 
-        return back()->with('success', 'Your application has been submitted!');
+        return back()->with('crud_success', 'Your application has been submitted!');
     }
 
     // Landing page with filters

@@ -25,6 +25,6 @@ class EmailVerificationController extends Controller
         $user->save();
 
         $this->logActivity('email_verification_success', "Email verified for: {$user->email}");
-        return redirect()->route('login')->with('success', 'Email verified successfully. You can now login.');
+        return redirect()->route('login')->with('crud_success', 'Email verified successfully. You can now login.');
     }
 }

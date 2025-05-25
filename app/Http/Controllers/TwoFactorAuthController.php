@@ -24,7 +24,7 @@ class TwoFactorAuthController extends Controller
         $userId = $request->session()->get('2fa_user_id');
         
         if (!$userId) {
-            return redirect()->route('login')->with('error', 'No active login attempt found.');
+            return redirect()->route('login')->with('crud_error', 'No active login attempt found.');
         }
 
         $user = User::find($userId);

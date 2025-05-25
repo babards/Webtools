@@ -77,7 +77,7 @@ class UserController extends Controller
 
         $this->logActivity('create_user', "Created user: {$user->first_name} {$user->last_name} ({$user->email})");
 
-        return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
+        return redirect()->route('admin.users.index')->with('crud_success', 'User created successfully.');
     }
 
     /**
@@ -186,7 +186,7 @@ class UserController extends Controller
 
         $this->logActivity('update_user', "Updated user: {$user->first_name} {$user->last_name} ({$user->email})");
 
-        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
+        return redirect()->route('admin.users.index')->with('crud_success', 'User updated successfully.');
     }
 
     /**
@@ -203,7 +203,7 @@ class UserController extends Controller
 
         $this->logActivity('delete_user', "Deleted user: $userName");
 
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        return redirect()->route('admin.users.index')->with('crud_success', 'User deleted successfully.');
     }
 
     /**
@@ -323,6 +323,6 @@ class UserController extends Controller
 
         $this->logActivity('update_profile', "Updated profile: {$user->first_name} {$user->last_name}");
 
-        return redirect()->route('profile.edit')->with('success', 'Profile updated successfully.');
+        return redirect()->route('profile.edit')->with('crud_success', 'Profile updated successfully.');
     }
 }
