@@ -90,6 +90,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('dashboard');
         Route::resource('users', UserController::class);
+        Route::patch('/unlock-user/{id}', [AuthController::class, 'unlockUser'])->name('unlock-user');
 
         // Admin Pad Management Routes
         Route::get('pads', [PadController::class, 'adminIndex'])->name('pads.index');
@@ -104,6 +105,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/logs', [App\Http\Controllers\Admin\LogController::class, 'index'])->name('logs.index');
         Route::get('/logs/export', [App\Http\Controllers\Admin\LogController::class, 'export'])->name('logs.export');
         Route::get('/pads/{id}/images', [PadController::class, 'adminGetPadImages'])->name('pads.images');
+
     });
 
     // Landlord routes

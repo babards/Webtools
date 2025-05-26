@@ -26,7 +26,7 @@ class AuthController extends Controller
     {
         return view('auth.register');
     }
-    
+
     public function register(Request $request)
     {
         $request->validate([
@@ -74,32 +74,61 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
+        $user = \App\Models\User::where('email', $request->email)->first();
+
+        // 🔒 Check if user exists and is locked
+        if ($user && $user->locked) {
+            $this->logActivity('login_locked', "Attempt to login on locked account: {$user->email}");
+            return back()->with('error', 'Your account is locked. Please contact an administrator.');
+        }
+
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
+
+            // Reset login attempts after successful login
+            $user->login_attempts = 0;
+            $user->save();
+
             Auth::logout(); // Logout immediately for 2FA
-            
+
+            // Email not verified
             if (!$user->is_verified) {
                 $this->logActivity('login_failed', "Login failed - Unverified email: {$request->email}");
                 return back()->with('error', 'Please verify your email before logging in.');
             }
-            // Generate and send 2FA code
+
+            // 🔐 2FA setup
             $user->two_factor_code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
             $user->two_factor_expires_at = now()->addMinutes(2);
             $user->save();
 
-            Mail::to($user->email)->send(new TwoFactorCodeMail($user));
+            Mail::to($user->email)->send(new \App\Mail\TwoFactorCodeMail($user));
             $this->logActivity('login_2fa_required', "2FA code sent to: {$user->email}");
-            
-            // Store user ID in session before redirecting
+
             $request->session()->put('2fa_user_id', $user->id);
-            
             return redirect()->route('2fa.verify.form')->with('message', 'Please check your email for the 2FA code.');
         }
+
+        // ❌ Invalid credentials, track failed attempt
+        if ($user) {
+            $user->increment('login_attempts');
+
+            if ($user->login_attempts >= 5) {
+                $user->locked = true;
+                $user->save();
+
+                $this->logActivity('account_locked', "User account locked: {$user->email}");
+                return back()->with('error', 'Your account has been locked due to too many failed login attempts. Contact admin.');
+            }
+        }
+
         $this->logActivity('login_failed', "Failed login attempt: {$request->email}");
+
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
     }
+
 
     public function verify2FA(Request $request)
     {
@@ -192,4 +221,15 @@ class AuthController extends Controller
         $this->logActivity('2fa_resend', "2FA code resent to: {$user->email}");
         return response()->json(['success' => true, 'message' => 'A new code has been sent to your email.']);
     }
+
+    public function unlockUser($id)
+    {
+        $user = User::findOrFail($id);
+        $user->locked = false;
+        $user->login_attempts = 0;
+        $user->save();
+
+        return back()->with('crud_success', 'User has been unlocked successfully.');
+    }
+
 }
